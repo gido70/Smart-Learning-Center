@@ -26,6 +26,7 @@
         <button class="nav-item" data-view="advisor"><span>◎</span> مستشار التعلّم</button>
         <button class="nav-item" data-view="live"><span>●</span> التعلّم المباشر</button>
         <button class="nav-item" data-view="replay"><span>▶</span> المحاضرات المسجلة</button>
+        <button class="nav-item" data-view="workspace"><span>▣</span> مساحة المحاضرة</button>
         <button class="nav-item" data-view="courses"><span>▦</span> مكتبة الكورسات</button>
         <button class="nav-item" data-view="inbox"><span>⇩</span> صندوق المعرفة</button>
         <button class="nav-item" data-view="micro"><span>⚡</span> التعلّم السريع</button>
@@ -106,8 +107,8 @@
           <article class="panel span-2">
             <div class="panel-head"><h3>أكمل من حيث توقفت</h3><button class="text-btn" data-go="courses">كل الكورسات</button></div>
             <div class="course-list">
-              <div class="course-row"><div class="course-thumb green">SB</div><div class="grow"><h4>Supabase من الصفر إلى الاحتراف</h4><p>الدرس 8: Authentication و Session Management</p><div class="progress"><i style="width:57%"></i></div></div><strong>57%</strong><button class="icon-btn">▶</button></div>
-              <div class="course-row"><div class="course-thumb purple">n8n</div><div class="grow"><h4>أتمتة الأعمال باستخدام n8n</h4><p>الدرس 4: Webhooks وربط الأدوات</p><div class="progress"><i style="width:31%"></i></div></div><strong>31%</strong><button class="icon-btn">▶</button></div>
+              <div class="course-row"><div class="course-thumb green">SB</div><div class="grow"><h4>Supabase من الصفر إلى الاحتراف</h4><p>الدرس 8: Authentication و Session Management</p><div class="progress"><i style="width:57%"></i></div></div><strong>57%</strong><button class="icon-btn" data-go="workspace" title="فتح مساحة المحاضرة">▶</button></div>
+              <div class="course-row"><div class="course-thumb purple">n8n</div><div class="grow"><h4>أتمتة الأعمال باستخدام n8n</h4><p>الدرس 4: Webhooks وربط الأدوات</p><div class="progress"><i style="width:31%"></i></div></div><strong>31%</strong><button class="icon-btn" data-go="workspace" title="فتح مساحة المحاضرة">▶</button></div>
             </div>
           </article>
 
@@ -165,6 +166,56 @@
             <article class="panel"><div class="panel-head"><h3>أهم ما قيل الآن</h3></div><ul class="clean-list"><li>استخدم Test URL أثناء التجربة.</li><li>فعّل Production URL عند النشر.</li><li>احفظ نسخة من Payload للاختبار.</li></ul></article>
             <article class="panel"><div class="panel-head"><h3>اسأل أثناء المحاضرة</h3></div><div class="chat-mini"><input placeholder="لم أفهم هذه النقطة..."/><button>إرسال</button></div></article>
           </div>
+        </div>
+      </section>
+
+      <section class="view" id="workspace">
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">Learning Workspace</span>
+            <h2>مساحة عمل المحاضرة</h2>
+            <p>شاهد المصدر داخل المنصة عندما يكون ذلك متاحاً، أو افتحه في موقعه الأصلي مع الاحتفاظ بالملاحظات والتقدم.</p>
+          </div>
+          <div class="workspace-status"><span class="embed-badge supported" id="embedBadge">● يدعم العرض داخل المنصة</span><span class="source-badge">YouTube</span></div>
+        </div>
+
+        <article class="panel workspace-source-bar">
+          <div class="source-details">
+            <div class="source-logo">YT</div>
+            <div><small>المصدر الحالي</small><h3 id="workspaceTitle">سياسات RLS في Supabase — شرح وتطبيق عملي</h3><p id="workspaceMeta">YouTube · ساعتان و18 دقيقة · آخر مشاهدة عند 24:36</p></div>
+          </div>
+          <div class="view-options">
+            <button class="btn primary active" id="watchInsideBtn">▶ مشاهدة داخل المنصة</button>
+            <a class="btn ghost external-link" id="watchOutsideBtn" href="https://www.youtube.com/" target="_blank" rel="noopener">↗ فتح في المصدر الأصلي</a>
+            <button class="btn soft" id="resumeBtn">↪ استئناف من 24:36</button>
+          </div>
+        </article>
+
+        <div class="workspace-grid">
+          <section class="panel player-panel">
+            <div class="player-shell" id="playerShell">
+              <iframe id="lessonFrame" title="مشغل المحاضرة" src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+              <div class="embed-fallback" id="embedFallback">
+                <span>🔗</span><h3>هذا المصدر لا يسمح بالعرض داخل المنصة</h3><p>يمكنك فتحه في موقعه الأصلي، وستبقى ملاحظاتك وتقدمك محفوظين هنا.</p><a class="btn primary" href="https://www.youtube.com/" target="_blank" rel="noopener">فتح المصدر الأصلي</a>
+              </div>
+            </div>
+            <div class="player-toolbar">
+              <button id="savePointBtn">📍 حفظ نقطة التوقف</button>
+              <button id="toggleEmbedBtn">تجربة مصدر يمنع التضمين</button>
+              <span>آخر نقطة محفوظة: <b id="lastPoint">24:36</b></span>
+            </div>
+          </section>
+
+          <aside class="workspace-side">
+            <article class="panel">
+              <div class="panel-head"><h3>المساعد التعليمي</h3><span class="tag green">مرتبط بالمحاضرة</span></div>
+              <div class="workspace-tabs"><button class="active" data-tab="summary">الخلاصة</button><button data-tab="notes">ملاحظاتي</button><button data-tab="chat">اسأل</button></div>
+              <div class="workspace-tab active" id="summaryTab"><ul class="clean-list"><li>RLS يحمي الصفوف وفق هوية المستخدم.</li><li>يجب تفعيل السياسات لكل عملية قراءة وكتابة.</li><li>الجزء الأهم يبدأ عند الدقيقة 36:10.</li></ul><button class="btn soft wide">إنشاء بطاقة معرفة</button></div>
+              <div class="workspace-tab" id="notesTab"><textarea id="lessonNotes" placeholder="اكتب ملاحظاتك أثناء المشاهدة..."></textarea><button class="btn soft wide" id="saveNotesBtn">حفظ الملاحظات</button></div>
+              <div class="workspace-tab" id="chatTab"><div class="chat-mini"><input placeholder="اسأل عن هذه المحاضرة..."/><button id="workspaceAskBtn">إرسال</button></div><div class="chat-answer" id="workspaceAnswer">ستظهر الإجابة هنا مع الإشارة إلى التوقيت.</div></div>
+            </article>
+            <article class="panel"><div class="panel-head"><h3>وضع الوصول</h3></div><div class="access-policy"><div><b>الخيار الأول</b><span>العرض داخل Smart Learning Center عندما يسمح المصدر.</span></div><div><b>الخيار الثاني</b><span>فتح المصدر الأصلي متاح دائماً.</span></div><div><b>التقدم</b><span>حفظ آخر نقطة والملاحظات داخل المنصة.</span></div></div></article>
+          </aside>
         </div>
       </section>
 

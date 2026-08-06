@@ -27,3 +27,23 @@ const projects=[['أكاديمية الفلاح','7 مفاهيم مكتملة ·
 $('#projectCards').innerHTML=projects.map(p=>`<article class="project-card"><span class="tag green">مشروع نشط</span><h3>${p[0]}</h3><p>${p[1]}</p><div class="project-checks">${p[2].map(s=>`<span>${s}</span>`).join('')}</div><button class="btn soft" style="margin-top:14px">فتح المشروع</button></article>`).join('');
 
 const hash=location.hash.replace('#','');if(hash&&document.getElementById(hash))showView(hash);
+
+// Learning Workspace interactions
+const watchInsideBtn=$('#watchInsideBtn'), watchOutsideBtn=$('#watchOutsideBtn'), lessonFrame=$('#lessonFrame'), embedFallback=$('#embedFallback'), embedBadge=$('#embedBadge');
+function setEmbedState(supported){
+  if(!lessonFrame||!embedFallback||!embedBadge)return;
+  lessonFrame.style.display=supported?'block':'none';
+  embedFallback.classList.toggle('show',!supported);
+  embedBadge.textContent=supported?'● يدعم العرض داخل المنصة':'● المصدر الأصلي فقط';
+  embedBadge.classList.toggle('supported',supported);embedBadge.classList.toggle('blocked',!supported);
+  watchInsideBtn.disabled=!supported;watchInsideBtn.style.opacity=supported?'1':'.55';
+}
+$('#toggleEmbedBtn')?.addEventListener('click',()=>{const nowBlocked=embedFallback.classList.contains('show');setEmbedState(nowBlocked);toast(nowBlocked?'تم تفعيل العرض الداخلي التجريبي':'تمت محاكاة مصدر يمنع التضمين')});
+$('#resumeBtn')?.addEventListener('click',()=>{showView('workspace');toast('سيتم الاستئناف من آخر نقطة محفوظة: '+($('#lastPoint')?.textContent||'24:36'))});
+$('#savePointBtn')?.addEventListener('click',()=>{const point='31:42';$('#lastPoint').textContent=point;$('#workspaceMeta').textContent='YouTube · ساعتان و18 دقيقة · آخر مشاهدة عند '+point;localStorage.setItem('slc_last_point',point);toast('تم حفظ نقطة التوقف عند '+point)});
+const savedPoint=localStorage.getItem('slc_last_point');if(savedPoint&&$('#lastPoint')){$('#lastPoint').textContent=savedPoint;$('#workspaceMeta').textContent='YouTube · ساعتان و18 دقيقة · آخر مشاهدة عند '+savedPoint}
+$$('.workspace-tabs button').forEach(btn=>btn.addEventListener('click',()=>{$$('.workspace-tabs button').forEach(b=>b.classList.remove('active'));$$('.workspace-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');$('#'+btn.dataset.tab+'Tab').classList.add('active')}));
+$('#saveNotesBtn')?.addEventListener('click',()=>{localStorage.setItem('slc_lesson_notes',$('#lessonNotes').value);toast('تم حفظ ملاحظات المحاضرة')});
+if($('#lessonNotes'))$('#lessonNotes').value=localStorage.getItem('slc_lesson_notes')||'';
+$('#workspaceAskBtn')?.addEventListener('click',()=>{$('#workspaceAnswer').textContent='إجابة تجريبية: يشرح المحاضر تفعيل RLS وربط السياسة بالمستخدم الحالي عند الدقيقة 36:10.';toast('تم تحليل السؤال داخل سياق المحاضرة')});
+$$('#replayCards .text-btn, #courseCards .text-btn').forEach(b=>b.addEventListener('click',()=>showView('workspace')));
