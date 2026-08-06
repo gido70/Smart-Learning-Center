@@ -7,7 +7,6 @@ const modal=$('#addModal');function openModal(){modal.classList.add('open');moda
 $('#quickAddBtn').addEventListener('click',openModal);$('#openAddModal')?.addEventListener('click',openModal);$('#closeModal').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 $('#analyzeBtn')?.addEventListener('click',()=>toast('تم تحليل المحاضرة وعرض قرار المشاهدة'));
-$('#startLiveBtn')?.addEventListener('click',e=>{e.target.textContent='■ إيقاف الجلسة';toast('بدأت الجلسة التجريبية: الترجمة والتلخيص يعملان الآن')});
 $$('.choice').forEach(b=>b.addEventListener('click',()=>{$$('.choice').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
 $$('.time-pills button').forEach(b=>b.addEventListener('click',()=>{$$('.time-pills button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
 
