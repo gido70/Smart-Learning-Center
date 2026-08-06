@@ -17,7 +17,8 @@
     questions: [],
     highlights: [],
     currentSlideDataUrl: null,
-    important: false
+    important: false,
+    revisitedSlideNumbers: []
   };
 
   const el = {
@@ -46,6 +47,7 @@
     slideTitle: $("slideTitleInput"),
     slideNotes: $("slideNotesInput"),
     markImportant: $("markImportantBtn"),
+    markRevisited: $("markRevisitedBtn"),
     saveSlideCard: $("saveSlideCardBtn"),
     summaryText: $("liveTranslationText"),
     refreshSummary: $("refreshLiveSummaryBtn"),
@@ -87,6 +89,22 @@
     }
   }
 
+  function enrichSlides() {
+    // يحسب مدة بقاء كل شريحة على الشاشة، وهل كُتبت عليها ملاحظة،
+    // وكم سؤالاً طُرح أثناء عرضها — يُبنى وقت التصدير فقط، لا يُخزَّن مباشرة أثناء الجلسة.
+    return state.slides.map((slide, index) => {
+      const next = state.slides[index + 1];
+      const windowEnd = next ? next.captured_at_seconds : elapsed();
+      const questionsDuringSlide = state.questions.filter((q) => q.slide_id === slide.id).length;
+      return {
+        ...slide,
+        duration_seconds: Math.max(0, windowEnd - slide.captured_at_seconds),
+        has_note: Boolean(slide.notes && slide.notes.trim()),
+        question_count: questionsDuringSlide
+      };
+    });
+  }
+
   function buildLectureFile() {
     return {
       version: "3.0.1",
@@ -96,7 +114,7 @@
       course_name: el.courseName?.value.trim() || "",
       started_at: state.startedAt ? new Date(state.startedAt).toISOString() : null,
       duration_seconds: elapsed(),
-      slides: state.slides,
+      slides: enrichSlides(),
       timeline: state.events,
       questions: state.questions,
       highlights: state.highlights,
@@ -208,9 +226,11 @@
       title: el.slideTitle.value,
       notes: "",
       important: false,
+      revisited: false,
       image_data_url: dataUrl
     };
     state.slides.push(slide);
+    if (el.markRevisited) el.markRevisited.textContent = "🔁 عاد إليها المحاضر";
     addEvent("slide", `الشريحة ${state.slideCount}`, "تم حفظ لقطة من شاشة العرض.", "🖼", slide.id);
     saveLocal();
     toast(`تم حفظ الشريحة ${state.slideCount}`);
@@ -273,6 +293,20 @@
     saveLocal();
   }
 
+  function markRevisited() {
+    if (!state.slides.length) {
+      toast("احفظ شريحة أولًا");
+      return;
+    }
+    const slide = state.slides[state.slides.length - 1];
+    slide.revisited = !slide.revisited;
+    el.markRevisited.textContent = slide.revisited ? "✓ عاد إليها المحاضر" : "🔁 عاد إليها المحاضر";
+    if (slide.revisited) {
+      addEvent("revisit", "عودة لشريحة سابقة", slide.title || `الشريحة ${slide.number}`, "🔁", slide.id);
+    }
+    saveLocal();
+  }
+
   function saveSlideCard() {
     if (!state.slides.length) {
       toast("احفظ شريحة أولًا");
@@ -316,7 +350,8 @@
   function saveQuestion() {
     const question = el.question.value.trim();
     if (!question) return;
-    const item = { question, at_seconds: elapsed() };
+    const currentSlide = state.slides[state.slides.length - 1] || null;
+    const item = { question, at_seconds: elapsed(), slide_id: currentSlide?.id || null };
     state.questions.push(item);
     addEvent("question", "سؤال أثناء المحاضرة", question, "❓");
     el.answer.textContent = "تم حفظ السؤال. سيظهر ضمن ملف المحاضرة للمراجعة والإجابة لاحقًا.";
@@ -379,7 +414,7 @@
       ...data.timeline.map((event) => `${formatTime(event.at_seconds)} — ${event.title}: ${event.text || ""}`),
       "",
       "=== الشرائح ===",
-      ...data.slides.map((slide) => `الشريحة ${slide.number}: ${slide.title}\n${slide.notes || ""}`),
+      ...data.slides.map((slide) => `الشريحة ${slide.number}: ${slide.title} (${formatTime(slide.duration_seconds)}${slide.revisited ? " · تمت العودة إليها" : ""}${slide.question_count ? ` · ${slide.question_count} سؤال` : ""})\n${slide.notes || ""}`),
       "",
       "=== الأسئلة ===",
       ...data.questions.map((item) => `${formatTime(item.at_seconds)} — ${item.question}`)
@@ -395,6 +430,7 @@
   el.shareScreen?.addEventListener("click", shareScreen);
   el.captureSlide?.addEventListener("click", captureSlide);
   el.markImportant?.addEventListener("click", markImportant);
+  el.markRevisited?.addEventListener("click", markRevisited);
   el.saveSlideCard?.addEventListener("click", saveSlideCard);
   el.refreshSummary?.addEventListener("click", refreshSummary);
   el.questionBtn?.addEventListener("click", saveQuestion);
