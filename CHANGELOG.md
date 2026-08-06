@@ -1,17 +1,11 @@
-# سجل الإصدارات
+# Changelog
 
-## 2.2.0 — الأساس المعماري
-- إضافة قواعد عمل Codex والمطورين في `AGENTS.md`.
-- إضافة سجل مركزي للوحدات وحالاتها.
-- إضافة اختبارات سلامة تمنع اختفاء الصفحات والوظائف الأساسية.
-- إضافة GitHub Actions لتشغيل الاختبارات تلقائيًا.
-- إضافة صفحة مرئية لخطة البناء داخل المنصة.
-- الحفاظ الكامل على واجهة 2.1 ومساحة المحاضرة.
+## Version 2.2 — Supabase Operational Start
 
-## 2.1.0 — مساحة المحاضرة
-- العرض داخل المنصة عند توفره.
-- فتح المصدر الأصلي دائمًا.
-- حفظ نقطة التوقف والملاحظات.
-
-## 2.0.0 — نموذج الرؤية الشاملة
-- Dashboard ووحدات المنصة الأساسية.
+- Connected the interface to the existing Supabase project.
+- Added email/password authentication through Supabase Auth.
+- Added real course creation and storage in `slc_courses`.
+- Added real Knowledge Inbox source storage in `slc_sources`.
+- Added course listing and deletion under the authenticated user's RLS scope.
+- Added database-backed Inbox columns.
+- No existing Al-Falah tables were modified.

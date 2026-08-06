@@ -6,7 +6,6 @@ $('#menuBtn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'
 const modal=$('#addModal');function openModal(){modal.classList.add('open');modal.setAttribute('aria-hidden','false')}function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
 $('#quickAddBtn').addEventListener('click',openModal);$('#openAddModal')?.addEventListener('click',openModal);$('#closeModal').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
-$$('.modal .btn.primary').forEach(b=>b.addEventListener('click',()=>{closeModal();toast('تمت إضافة المصدر إلى صندوق المعرفة')}));
 $('#analyzeBtn')?.addEventListener('click',()=>toast('تم تحليل المحاضرة وعرض قرار المشاهدة'));
 $('#startLiveBtn')?.addEventListener('click',e=>{e.target.textContent='■ إيقاف الجلسة';toast('بدأت الجلسة التجريبية: الترجمة والتلخيص يعملان الآن')});
 $$('.choice').forEach(b=>b.addEventListener('click',()=>{$$('.choice').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
@@ -47,9 +46,3 @@ $('#saveNotesBtn')?.addEventListener('click',()=>{localStorage.setItem('slc_less
 if($('#lessonNotes'))$('#lessonNotes').value=localStorage.getItem('slc_lesson_notes')||'';
 $('#workspaceAskBtn')?.addEventListener('click',()=>{$('#workspaceAnswer').textContent='إجابة تجريبية: يشرح المحاضر تفعيل RLS وربط السياسة بالمستخدم الحالي عند الدقيقة 36:10.';toast('تم تحليل السؤال داخل سياق المحاضرة')});
 $$('#replayCards .text-btn, #courseCards .text-btn').forEach(b=>b.addEventListener('click',()=>showView('workspace')));
-
-// Architecture registry view — Sprint 1
-if(window.SLC_MODULES && $('#architectureGrid')){
- const labels={prototype:'نموذج أولي',next:'التالي',planned:'مخطط'};
- $('#architectureGrid').innerHTML=window.SLC_MODULES.map(m=>`<article class="panel architecture-card"><div class="panel-head"><h3>${m.name}</h3><span class="tag ${m.stage==='next'?'green':m.stage==='prototype'?'blue':''}">${labels[m.stage]}</span></div><p>الطابق ${m.floor}</p><small>وحدة مستقلة قابلة للتطوير والاختبار دون المساس ببقية المبنى.</small></article>`).join('');
-}
