@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>مركز التعلّم الذكي</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">ذ</div>
+        <div>
+          <h1>مركز التعلّم الذكي</h1>
+          <p>نظام تشغيل شخصي للتعلّم والمعرفة</p>
+        </div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span> لوحة التحكم</button>
+        <button class="nav-item" data-view="advisor"><span>◎</span> مستشار التعلّم</button>
+        <button class="nav-item" data-view="live"><span>●</span> التعلّم المباشر</button>
+        <button class="nav-item" data-view="replay"><span>▶</span> المحاضرات المسجلة</button>
+        <button class="nav-item" data-view="courses"><span>▦</span> مكتبة الكورسات</button>
+        <button class="nav-item" data-view="inbox"><span>⇩</span> صندوق المعرفة</button>
+        <button class="nav-item" data-view="micro"><span>⚡</span> التعلّم السريع</button>
+        <button class="nav-item" data-view="projects"><span>⌘</span> المشروعات</button>
+        <button class="nav-item" data-view="graph"><span>✦</span> خريطة المعرفة</button>
+        <button class="nav-item" data-view="review"><span>↻</span> مركز المراجعة</button>
+        <button class="nav-item" data-view="factory"><span>✎</span> مصنع المحتوى</button>
+        <button class="nav-item" data-view="chat"><span>◌</span> اسأل معرفتك</button>
+        <button class="nav-item" data-view="analytics"><span>▥</span> التحليلات</button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="mini-card">
+          <strong>الحساب التجريبي</strong>
+          <span>الخطة الشخصية</span>
+          <div class="progress"><i style="width:64%"></i></div>
+          <small>64% من وقت المعالجة الشهري</small>
+        </div>
+        <button class="nav-item" data-view="settings"><span>⚙</span> الإعدادات</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn mobile-menu" id="menuBtn" aria-label="القائمة">☰</button>
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input id="globalSearch" placeholder="ابحث في المحاضرات، الأكواد، الأفكار والمشروعات..." />
+          <kbd>Ctrl K</kbd>
+        </div>
+        <div class="top-actions">
+          <button class="icon-btn" title="الإشعارات">🔔<b class="dot"></b></button>
+          <button class="quick-add" id="quickAddBtn">＋ إضافة مصدر معرفة</button>
+          <div class="avatar">ع</div>
+        </div>
+      </header>
+
+      <section class="view active" id="dashboard">
+        <div class="hero">
+          <div>
+            <span class="eyebrow">الخميس، 6 أغسطس 2026</span>
+            <h2>صباح الخير، عبدالرحمن</h2>
+            <p>لديك اليوم محاضرة مباشرة، و4 عناصر للمراجعة، و3 روابط تنتظر المعالجة.</p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn primary" data-go="live">ابدأ جلسة مباشرة</button>
+            <button class="btn ghost" data-go="inbox">أضف رابطاً جديداً</button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card"><span class="stat-icon teal">⏱</span><div><b>46 ساعة</b><small>وقت تم توفيره</small></div><em>+12 هذا الشهر</em></article>
+          <article class="stat-card"><span class="stat-icon blue">▣</span><div><b>128</b><small>مصدر معرفة</small></div><em>9 جديدة</em></article>
+          <article class="stat-card"><span class="stat-icon amber">✓</span><div><b>74%</b><small>معدل الاستفادة</small></div><em>+8%</em></article>
+          <article class="stat-card"><span class="stat-icon violet">⌘</span><div><b>23</b><small>فكرة تم تطبيقها</small></div><em>5 هذا الأسبوع</em></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel span-2">
+            <div class="panel-head"><div><span class="live-dot"></span><h3>المحاضرة المباشرة القادمة</h3></div><button class="text-btn" data-go="live">عرض التفاصيل</button></div>
+            <div class="live-session-card">
+              <div class="live-time"><strong>05:00</strong><span>مساءً</span></div>
+              <div class="live-info"><span class="tag red">مباشر اليوم</span><h4>بناء سير عمل احترافي في n8n</h4><p>الأكاديمية الرقمية · محاضرة 3 من 12 · اللغة: الإنجليزية</p><div class="chips"><span>ترجمة عربية</span><span>تلخيص لحظي</span><span>استخراج الخطوات</span></div></div>
+              <button class="btn primary" data-go="live">تهيئة الجلسة</button>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><h3>ماذا أتعلم اليوم؟</h3></div>
+            <div class="recommendation">
+              <span class="score-ring">92</span>
+              <h4>سياسات RLS في Supabase</h4>
+              <p>مهم لمشروع أكاديمية الفلاح، ويمكنك الحصول على 90% من الفائدة في 24 دقيقة.</p>
+              <button class="btn soft" data-go="advisor">اعرض قرار المشاهدة</button>
+            </div>
+          </article>
+
+          <article class="panel span-2">
+            <div class="panel-head"><h3>أكمل من حيث توقفت</h3><button class="text-btn" data-go="courses">كل الكورسات</button></div>
+            <div class="course-list">
+              <div class="course-row"><div class="course-thumb green">SB</div><div class="grow"><h4>Supabase من الصفر إلى الاحتراف</h4><p>الدرس 8: Authentication و Session Management</p><div class="progress"><i style="width:57%"></i></div></div><strong>57%</strong><button class="icon-btn">▶</button></div>
+              <div class="course-row"><div class="course-thumb purple">n8n</div><div class="grow"><h4>أتمتة الأعمال باستخدام n8n</h4><p>الدرس 4: Webhooks وربط الأدوات</p><div class="progress"><i style="width:31%"></i></div></div><strong>31%</strong><button class="icon-btn">▶</button></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><h3>مراجعة اليوم</h3><span class="badge">4 بطاقات</span></div>
+            <div class="review-preview"><div class="flash-card"><small>سؤال سريع</small><h4>ما الفرق بين Access Token وRefresh Token؟</h4><button class="btn soft" data-go="review">ابدأ المراجعة</button></div></div>
+          </article>
+
+          <article class="panel span-2">
+            <div class="panel-head"><h3>صندوق المعرفة</h3><button class="text-btn" data-go="inbox">إدارة الصندوق</button></div>
+            <div class="inbox-list">
+              <div class="inbox-item"><span class="source yt">YT</span><div class="grow"><h4>How to Build an AI Agent with n8n</h4><p>YouTube · 2:18:40 · أضيف قبل ساعة</p></div><span class="tag amber">بانتظار التحليل</span></div>
+              <div class="inbox-item"><span class="source ig">IG</span><div class="grow"><h4>3 أخطاء شائعة في GitHub Actions</h4><p>Instagram Reel · 01:24</p></div><span class="tag blue">جاهز للمراجعة</span></div>
+              <div class="inbox-item"><span class="source pdf">PDF</span><div class="grow"><h4>دليل Supabase Row Level Security</h4><p>مستند · 46 صفحة</p></div><span class="tag green">تم التحليل</span></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><h3>اقتراح ذكي</h3></div>
+            <div class="ai-note"><span>✦</span><p>لديك 7 فيديوهات قصيرة عن GitHub Actions. يمكن دمجها في دليل عملي واحد من 6 أقسام.</p><button class="btn soft" data-go="factory">أنشئ الدليل</button></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="advisor">
+        <div class="page-head"><div><span class="eyebrow">AI Learning Advisor</span><h2>هل تستحق هذه المحاضرة وقتك؟</h2><p>ألصق رابطاً أو اختر محاضرة، وسيحلل النظام قيمتها ويقترح أقصر طريق لأكبر فائدة.</p></div></div>
+        <div class="split-grid">
+          <article class="panel">
+            <label class="field-label">رابط المحاضرة أو المصدر</label>
+            <div class="url-box"><input value="https://www.youtube.com/watch?v=example"/><button class="btn primary" id="analyzeBtn">حلّل المحتوى</button></div>
+            <div class="upload-zone">أو اسحب ملف فيديو، صوت، PDF أو Transcript هنا</div>
+            <h3 class="section-title">هدفك من المحتوى</h3>
+            <div class="choice-grid"><button class="choice active">أريد النتيجة بسرعة</button><button class="choice">أريد التطبيق فقط</button><button class="choice">أريد الفهم العميق</button><button class="choice">قيّم هل أشاهده</button></div>
+            <h3 class="section-title">الوقت المتاح</h3>
+            <div class="time-pills"><button>5 دقائق</button><button class="active">15 دقيقة</button><button>30 دقيقة</button><button>كامل</button></div>
+          </article>
+          <article class="panel result-card">
+            <div class="decision-top"><span class="score-ring large">92</span><div><span class="tag green">موصى بها</span><h3>شاهد الأجزاء الأساسية فقط</h3><p>يمكنك الوصول إلى 90% من الفائدة في 24 دقيقة بدلاً من ساعتين و18 دقيقة.</p></div></div>
+            <div class="metric-list"><div><span>القيمة العملية</span><b>95%</b></div><div><span>نسبة التكرار</span><b>21%</b></div><div><span>كثافة المعلومات</span><b>مرتفعة</b></div><div><span>مناسبة لمشروعاتك</span><b>نعم</b></div></div>
+            <h3 class="section-title">المقاطع المقترحة</h3>
+            <div class="timeline"><div class="must"><b>08:20 - 21:45</b><span>مفهوم Authentication الأساسي</span></div><div class="must"><b>36:10 - 47:50</b><span>تطبيق RLS عملياً</span></div><div class="skip"><b>47:51 - 01:12:00</b><span>يمكن تجاوز هذا الجزء: تكرار وأسئلة جانبية</span></div></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="live">
+        <div class="page-head"><div><span class="eyebrow">Live Learning Companion</span><h2>المساعد المصاحب للمحاضرات المباشرة</h2><p>ترجمة، تفريغ، تلخيص وملاحظات ذكية أثناء المحاضرة نفسها.</p></div><button class="btn primary" id="startLiveBtn">● بدء جلسة مباشرة</button></div>
+        <div class="live-layout">
+          <article class="panel live-stage">
+            <div class="stage-screen"><div class="stage-placeholder"><span>🎙</span><h3>الجلسة غير متصلة</h3><p>اختر مصدر الصوت وابدأ الالتقاط بعد موافقتك.</p></div><div class="stage-controls"><button>🎤 الميكروفون</button><button>🔊 صوت النظام</button><button>🌐 لغة المصدر</button><button>⚙ الإعدادات</button></div></div>
+            <div class="live-transcript"><div class="panel-head"><h3>النص المباشر</h3><span class="tag red">LIVE</span></div><p><b>00:00:12</b> سيشرح المحاضر الآن كيفية بناء Webhook في n8n وربطه بقاعدة البيانات...</p><p><b>00:00:31</b> The first step is to create a webhook node and select the POST method...</p></div>
+          </article>
+          <div class="side-stack">
+            <article class="panel"><div class="panel-head"><h3>الترجمة الفورية</h3><span class="tag blue">AR</span></div><p class="translated">الخطوة الأولى هي إنشاء عقدة Webhook واختيار طريقة POST، ثم نسخ عنوان الاختبار...</p></article>
+            <article class="panel"><div class="panel-head"><h3>أهم ما قيل الآن</h3></div><ul class="clean-list"><li>استخدم Test URL أثناء التجربة.</li><li>فعّل Production URL عند النشر.</li><li>احفظ نسخة من Payload للاختبار.</li></ul></article>
+            <article class="panel"><div class="panel-head"><h3>اسأل أثناء المحاضرة</h3></div><div class="chat-mini"><input placeholder="لم أفهم هذه النقطة..."/><button>إرسال</button></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="replay"><div class="page-head"><div><span class="eyebrow">Replay Center</span><h2>المحاضرات المسجلة</h2><p>حلّل المحاضرات القديمة، استخرج الفصول، واذهب مباشرة إلى الأجزاء المهمة.</p></div><button class="btn primary">＋ إضافة محاضرة</button></div><div class="cards-grid" id="replayCards"></div></section>
+      <section class="view" id="courses"><div class="page-head"><div><span class="eyebrow">Course Library</span><h2>مكتبة الكورسات</h2><p>جميع دوراتك من YouTube والمنصات المدفوعة والملفات الخاصة في مكان واحد.</p></div><button class="btn primary">＋ إضافة كورس</button></div><div class="filter-row"><button class="active">الكل</button><button>قيد التعلّم</button><button>تحتاج مراجعة</button><button>مكتملة</button><input placeholder="بحث داخل الكورسات"/></div><div class="cards-grid" id="courseCards"></div></section>
+      <section class="view" id="inbox"><div class="page-head"><div><span class="eyebrow">Knowledge Inbox</span><h2>صندوق المعرفة</h2><p>ألصق أي رابط الآن، واتخذ قرار المعالجة لاحقاً دون أن تضيع الفكرة.</p></div><button class="btn primary" id="openAddModal">＋ إضافة مصدر</button></div><div class="inbox-board" id="inboxBoard"></div></section>
+      <section class="view" id="micro"><div class="page-head"><div><span class="eyebrow">Micro Learning Center</span><h2>التعلّم السريع</h2><p>حوّل Shorts وReels وTikTok وX إلى كبسولات معرفة قابلة للبحث والتجميع.</p></div><button class="btn primary">＋ إضافة رابط قصير</button></div><div class="platform-strip"><span>YouTube Shorts</span><span>Instagram Reels</span><span>Facebook Reels</span><span>TikTok</span><span>X</span></div><div class="micro-grid" id="microCards"></div></section>
+      <section class="view" id="projects"><div class="page-head"><div><span class="eyebrow">Project Intelligence</span><h2>ربط التعلّم بالمشروعات</h2><p>اعرف ما الذي تعلمته وما الذي ينقص كل مشروع قبل التنفيذ.</p></div><button class="btn primary">＋ مشروع جديد</button></div><div class="project-grid" id="projectCards"></div></section>
+      <section class="view" id="graph"><div class="page-head"><div><span class="eyebrow">Knowledge Graph</span><h2>خريطة المعرفة</h2><p>رؤية بصرية للمفاهيم التي تعلمتها وعلاقاتها ومستوى إتقانك.</p></div></div><article class="panel graph-panel"><div class="knowledge-map"><span class="node core">Supabase</span><span class="node n1">Auth</span><span class="node n2">RLS</span><span class="node n3">Storage</span><span class="node n4">JWT</span><span class="node n5">Policies</span><span class="node n6">Sessions</span><i class="line l1"></i><i class="line l2"></i><i class="line l3"></i><i class="line l4"></i><i class="line l5"></i><i class="line l6"></i></div><div class="legend"><span><i class="known"></i> متقن</span><span><i class="review"></i> يحتاج مراجعة</span><span><i class="new"></i> لم يبدأ</span></div></article></section>
+      <section class="view" id="review"><div class="page-head"><div><span class="eyebrow">Spaced Repetition</span><h2>مركز المراجعة</h2><p>راجع ما تعلمته في الوقت المناسب قبل أن تنساه.</p></div><button class="btn primary">ابدأ جلسة المراجعة</button></div><div class="review-grid"><article class="panel big-flash"><span>بطاقة 1 من 4</span><h3>ما الفرق بين Authentication وAuthorization؟</h3><button class="btn soft">إظهار الإجابة</button><div class="rating-row"><button>نسيت</button><button>صعب</button><button>جيد</button><button>سهل</button></div></article><article class="panel"><h3>جدول المراجعة</h3><div class="calendar-bars"><div><span>اليوم</span><b style="width:76%"></b><em>4</em></div><div><span>غداً</span><b style="width:48%"></b><em>2</em></div><div><span>هذا الأسبوع</span><b style="width:88%"></b><em>9</em></div></div></article></div></section>
+      <section class="view" id="factory"><div class="page-head"><div><span class="eyebrow">Knowledge Factory</span><h2>مصنع المحتوى</h2><p>حوّل معرفتك الناضجة إلى محتوى أصلي يفيد الآخرين.</p></div></div><div class="factory-grid"><button class="factory-card"><span>📝</span><b>مقال تعليمي</b><small>من ملخص أو عدة مصادر</small></button><button class="factory-card"><span>🎬</span><b>سيناريو فيديو</b><small>Short أو فيديو طويل</small></button><button class="factory-card"><span>🎧</span><b>نص بودكاست</b><small>حوار أو حلقة فردية</small></button><button class="factory-card"><span>▤</span><b>دليل عملي</b><small>خطوات وأمثلة وأكواد</small></button><button class="factory-card"><span>❓</span><b>اختبار</b><small>أسئلة وتقييم فوري</small></button><button class="factory-card"><span>📱</span><b>منشورات اجتماعية</b><small>LinkedIn وX وInstagram</small></button></div><article class="panel maturity-panel"><h3>نضج المعرفة قبل النشر</h3><div class="maturity-flow"><span class="done">جُمعت</span><span class="done">فُهمت</span><span class="done">رُوجعت</span><span class="active">طُبقت</span><span>جاهزة للتعليم</span><span>مرجع منشور</span></div></article></section>
+      <section class="view" id="chat"><div class="page-head"><div><span class="eyebrow">Ask Your Knowledge</span><h2>اسأل كل ما تعلمته</h2><p>إجابات مبنية على مكتبتك الشخصية مع الإشارة إلى المصدر والتوقيت.</p></div></div><div class="chat-layout"><aside class="panel chat-history"><button class="btn soft">＋ محادثة جديدة</button><h4>محادثات حديثة</h4><button>كيف أحمي صفحة الأدمن؟</button><button>قارن دورات Supabase</button><button>ملخص n8n لهذا الشهر</button></aside><article class="panel chat-main"><div class="chat-welcome"><span>✦</span><h3>ماذا تريد أن تعرف من مكتبتك؟</h3><div class="suggestions"><button>أرني كل ما تعلمته عن RLS</button><button>ما الأفكار التي لم أطبقها بعد؟</button><button>أنشئ مساراً لتعلم n8n</button></div></div><div class="chat-input"><input placeholder="اكتب سؤالك..."/><button>إرسال</button></div></article></div></section>
+      <section class="view" id="analytics"><div class="page-head"><div><span class="eyebrow">Learning Analytics</span><h2>تحليلات التعلّم</h2><p>قِس ما طبّقته وتذكرته، لا عدد الساعات التي شاهدتها فقط.</p></div></div><div class="stats-grid"><article class="stat-card"><span class="stat-icon teal">↗</span><div><b>74%</b><small>معدل الاستفادة</small></div></article><article class="stat-card"><span class="stat-icon blue">✓</span><div><b>23</b><small>أفكار مطبقة</small></div></article><article class="stat-card"><span class="stat-icon amber">↻</span><div><b>81%</b><small>ثبات المعرفة</small></div></article><article class="stat-card"><span class="stat-icon violet">⏱</span><div><b>46 ساعة</b><small>وقت تم توفيره</small></div></article></div><div class="analytics-grid"><article class="panel"><h3>التعلّم حسب المجال</h3><div class="bars"><div><span>Supabase</span><b style="width:83%"></b><em>83%</em></div><div><span>n8n</span><b style="width:68%"></b><em>68%</em></div><div><span>GitHub</span><b style="width:55%"></b><em>55%</em></div><div><span>الذكاء الاصطناعي</span><b style="width:72%"></b><em>72%</em></div></div></article><article class="panel"><h3>من المشاهدة إلى التطبيق</h3><div class="funnel"><span style="width:100%">128 مصدر</span><span style="width:82%">105 ملخص</span><span style="width:61%">78 مراجعة</span><span style="width:36%">46 مهمة</span><span style="width:18%">23 تطبيق</span></div></article></div></section>
+      <section class="view" id="settings"><div class="page-head"><div><span class="eyebrow">Settings</span><h2>الإعدادات</h2><p>خصص اللغة، مصادر الذكاء الاصطناعي، الخصوصية وحدود الاستخدام.</p></div></div><div class="settings-grid"><article class="panel"><h3>التفضيلات العامة</h3><label class="setting"><span>لغة الواجهة</span><select><option>العربية</option><option>English</option></select></label><label class="setting"><span>النمط</span><select><option>فاتح</option><option>داكن</option><option>حسب النظام</option></select></label><label class="setting"><span>المنطقة الزمنية</span><select><option>Europe/Istanbul</option></select></label></article><article class="panel"><h3>الذكاء الاصطناعي</h3><label class="setting"><span>مزود التلخيص</span><select><option>Claude</option><option>OpenAI</option><option>Gemini</option></select></label><label class="setting"><span>استخدم مفتاحي الخاص</span><input type="checkbox" checked></label><label class="setting"><span>حفظ إصدارات الملخص</span><input type="checkbox" checked></label></article><article class="panel"><h3>الخصوصية</h3><label class="setting"><span>معالجة محلية عند الإمكان</span><input type="checkbox" checked></label><label class="setting"><span>حذف الملفات الأصلية بعد التفريغ</span><input type="checkbox"></label><label class="setting"><span>تشفير الملاحظات الخاصة</span><input type="checkbox" checked></label></article></div></section>
+    </main>
+  </div>
+
+  <div class="modal" id="addModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" id="closeModal">×</button><span class="eyebrow">إضافة مصدر معرفة</span><h2>ماذا تريد أن تضيف؟</h2><div class="source-grid"><button data-source="YouTube">▶<b>YouTube</b></button><button data-source="Platform">▣<b>منصة مدفوعة</b></button><button data-source="Live">●<b>محاضرة مباشرة</b></button><button data-source="Short">⚡<b>فيديو قصير</b></button><button data-source="PDF">PDF<b>ملف أو كتاب</b></button><button data-source="Notes">✎<b>ملاحظات</b></button></div><label class="field-label">الرابط أو الوصف</label><input class="wide-input" placeholder="ألصق الرابط هنا..."/><button class="btn primary wide">إضافة إلى صندوق المعرفة</button></div></div>
+  <div class="toast" id="toast">تمت العملية بنجاح</div>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
