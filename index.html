@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="stylesheet" href="assets/css/app.css?v=3.0.1" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -156,16 +156,126 @@
       </section>
 
       <section class="view" id="live">
-        <div class="page-head"><div><span class="eyebrow">Live Learning Companion</span><h2>المساعد المصاحب للمحاضرات المباشرة</h2><p>ترجمة، تفريغ، تلخيص وملاحظات ذكية أثناء المحاضرة نفسها.</p></div><button class="btn primary" id="startLiveBtn">● بدء جلسة مباشرة</button></div>
-        <div class="live-layout">
-          <article class="panel live-stage">
-            <div class="stage-screen"><div class="stage-placeholder"><span>🎙</span><h3>الجلسة غير متصلة</h3><p>اختر مصدر الصوت وابدأ الالتقاط بعد موافقتك.</p></div><div class="stage-controls"><button>🎤 الميكروفون</button><button>🔊 صوت النظام</button><button>🌐 لغة المصدر</button><button>⚙ الإعدادات</button></div></div>
-            <div class="live-transcript"><div class="panel-head"><h3>النص المباشر</h3><span class="tag red">LIVE</span></div><p><b>00:00:12</b> سيشرح المحاضر الآن كيفية بناء Webhook في n8n وربطه بقاعدة البيانات...</p><p><b>00:00:31</b> The first step is to create a webhook node and select the POST method...</p></div>
+        <div class="page-head live-page-head">
+          <div>
+            <span class="eyebrow">Live Learning Studio</span>
+            <h2>استوديو التعلم المباشر</h2>
+            <p>التقط الصوت أو العرض التقديمي أو الاثنين معًا، ثم ابنِ ملف المحاضرة خطوة بخطوة.</p>
+          </div>
+          <div class="live-head-actions">
+            <span class="live-save-state" id="liveSaveState">● الحفظ المحلي جاهز</span>
+            <button class="btn primary" id="startLiveBtn">● بدء جلسة مباشرة</button>
+          </div>
+        </div>
+
+        <div class="capture-mode-switch" id="captureModeSwitch" role="tablist" aria-label="نوع المحاضرة">
+          <button class="active" data-capture-mode="audio">🎤 صوت</button>
+          <button data-capture-mode="presentation">🖥 عرض تقديمي</button>
+          <button data-capture-mode="hybrid">🎤🖥 هجين</button>
+        </div>
+
+        <div class="live-layout live-studio-layout">
+          <article class="panel live-stage live-capture-panel">
+            <div class="stage-screen studio-screen" id="studioScreen">
+              <div class="studio-status-bar">
+                <span id="studioModeLabel">وضع الصوت</span>
+                <span id="studioTimer">00:00:00</span>
+              </div>
+
+              <div class="stage-placeholder" id="audioPlaceholder">
+                <span>🎙</span>
+                <h3>الجلسة غير متصلة</h3>
+                <p>اختر مصدر الصوت وابدأ الالتقاط بعد موافقتك.</p>
+              </div>
+
+              <div class="presentation-capture hidden" id="presentationCapture">
+                <video id="screenPreview" autoplay muted playsinline></video>
+                <canvas id="slideCanvas" class="hidden"></canvas>
+                <div class="capture-empty" id="captureEmpty">
+                  <span>🖥</span>
+                  <h3>لم يتم اختيار شاشة العرض بعد</h3>
+                  <p>اضغط «مشاركة شاشة Zoom» ثم اختر نافذة Zoom أو الشاشة التي تعرض الشرائح.</p>
+                </div>
+                <div class="slide-number-badge" id="slideNumberBadge">الشريحة 0</div>
+              </div>
+
+              <div class="stage-controls studio-controls">
+                <button id="microphoneBtn">🎤 الميكروفون</button>
+                <button id="systemAudioBtn">🔊 صوت النظام</button>
+                <button id="shareScreenBtn">🖥 مشاركة شاشة Zoom</button>
+                <button id="captureSlideBtn">📸 حفظ الشريحة</button>
+                <button id="sourceLanguageBtn">🌐 لغة المصدر</button>
+                <button id="studioSettingsBtn">⚙ الإعدادات</button>
+              </div>
+            </div>
+
+            <div class="live-transcript">
+              <div class="panel-head">
+                <div>
+                  <h3>النص المباشر وسجل المحاضرة</h3>
+                  <small class="muted-note">يُجمع الصوت والشرائح والعلامات المهمة في خط زمني واحد.</small>
+                </div>
+                <span class="tag red" id="liveStatusBadge">غير متصل</span>
+              </div>
+
+              <div class="lecture-timeline" id="lectureTimeline">
+                <div class="timeline-empty">ابدأ الجلسة أو احفظ أول شريحة ليظهر الخط الزمني هنا.</div>
+              </div>
+            </div>
           </article>
+
           <div class="side-stack">
-            <article class="panel"><div class="panel-head"><h3>الترجمة الفورية</h3><span class="tag blue">AR</span></div><p class="translated">الخطوة الأولى هي إنشاء عقدة Webhook واختيار طريقة POST، ثم نسخ عنوان الاختبار...</p></article>
-            <article class="panel"><div class="panel-head"><h3>أهم ما قيل الآن</h3></div><ul class="clean-list"><li>استخدم Test URL أثناء التجربة.</li><li>فعّل Production URL عند النشر.</li><li>احفظ نسخة من Payload للاختبار.</li></ul></article>
-            <article class="panel"><div class="panel-head"><h3>اسأل أثناء المحاضرة</h3></div><div class="chat-mini"><input placeholder="لم أفهم هذه النقطة..."/><button>إرسال</button></div></article>
+            <article class="panel current-slide-card" id="currentSlideCard">
+              <div class="panel-head">
+                <div>
+                  <h3>الشريحة الحالية</h3>
+                  <small id="currentSlideMeta">لم يتم التقاط شريحة بعد</small>
+                </div>
+                <span class="tag blue" id="slideImportance">—</span>
+              </div>
+              <div class="current-slide-thumb" id="currentSlideThumb">
+                <span>🖼</span>
+                <p>ستظهر آخر شريحة محفوظة هنا.</p>
+              </div>
+              <label class="field-label" for="slideTitleInput">عنوان الشريحة</label>
+              <input class="wide-input" id="slideTitleInput" placeholder="اكتب عنوان الشريحة أو عدّله">
+              <label class="field-label" for="slideNotesInput">ملاحظات الشريحة</label>
+              <textarea id="slideNotesInput" class="studio-textarea" placeholder="اكتب أهم النقاط أو ما شرحه المحاضر..."></textarea>
+              <div class="slide-card-actions">
+                <button class="btn soft" id="markImportantBtn">⭐ مهمة</button>
+                <button class="btn soft" id="saveSlideCardBtn">حفظ كبطاقة معرفة</button>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><h3>الترجمة أو الملخص الفوري</h3><span class="tag blue">AR</span></div>
+              <p class="translated" id="liveTranslationText">عند توفر نص أو ملاحظات، ستظهر هنا خلاصة سريعة لما يدور في المحاضرة.</p>
+              <button class="btn soft wide" id="refreshLiveSummaryBtn">تحديث الخلاصة</button>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><h3>أهم ما قيل أو عُرض</h3></div>
+              <ul class="clean-list" id="liveHighlightsList">
+                <li>لم يتم تحديد نقاط مهمة بعد.</li>
+              </ul>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><h3>اسأل أثناء المحاضرة</h3></div>
+              <div class="chat-mini">
+                <input id="liveQuestionInput" placeholder="لم أفهم هذه الشريحة أو النقطة...">
+                <button id="liveQuestionBtn">إرسال</button>
+              </div>
+              <div class="live-answer" id="liveAnswer">سيُحفظ سؤالك ضمن ملف المحاضرة.</div>
+            </article>
+
+            <article class="panel finish-live-panel">
+              <button class="btn primary wide" id="finishLiveBtn">إنهاء وإنشاء ملف المحاضرة</button>
+              <div class="live-export-actions">
+                <button id="exportLiveJsonBtn">تنزيل JSON</button>
+                <button id="exportLiveTxtBtn">تنزيل TXT</button>
+              </div>
+            </article>
           </div>
         </div>
       </section>
@@ -239,8 +349,32 @@
   <div class="modal" id="courseModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" id="closeCourseModal">×</button><span class="eyebrow">Course Library</span><h2>إضافة كورس جديد</h2><label class="field-label">اسم الكورس *</label><input class="wide-input" id="courseTitleInput" placeholder="مثال: Supabase من الصفر إلى الاحتراف"/><label class="field-label">المنصة أو الجهة</label><input class="wide-input" id="courseProviderInput" placeholder="YouTube، Udemy، منصة خاصة..."/><label class="field-label">رابط الكورس</label><input class="wide-input" id="courseUrlInput" placeholder="https://..."/><label class="field-label">المدرب</label><input class="wide-input" id="courseInstructorInput" placeholder="اسم المدرب"/><div class="form-row"><label><span>الحالة</span><select id="courseStatusInput"><option value="planned">مخطط</option><option value="active" selected>قيد التعلّم</option><option value="paused">متوقف مؤقتًا</option><option value="completed">مكتمل</option></select></label><label><span>الأولوية</span><select id="coursePriorityInput"><option value="5">عالية جدًا</option><option value="4">عالية</option><option value="3" selected>متوسطة</option><option value="2">منخفضة</option><option value="1">لاحقًا</option></select></label></div><button class="btn primary wide" id="saveCourseBtn">حفظ الكورس</button></div></div>
 
   <div class="modal" id="authModal" aria-hidden="true"><div class="modal-card auth-card"><button class="modal-close" id="closeAuthModal">×</button><span class="eyebrow">حساب Smart Learning Center</span><h2 id="authTitle">تسجيل الدخول</h2><p class="auth-note">بياناتك الخاصة محمية بسياسات RLS، ولا يمكن لأي مستخدم رؤية بيانات مستخدم آخر.</p><label class="field-label">البريد الإلكتروني</label><input class="wide-input" id="authEmailInput" type="email" autocomplete="email" placeholder="name@example.com"/><label class="field-label">كلمة المرور</label><input class="wide-input" id="authPasswordInput" type="password" autocomplete="current-password" placeholder="8 أحرف على الأقل"/><button class="btn primary wide" id="authSubmitBtn">تسجيل الدخول</button><button class="text-btn auth-toggle" id="authToggleBtn">ليس لدي حساب — إنشاء حساب جديد</button><div class="auth-message" id="authMessage"></div></div></div>
+
+  <div class="modal" id="finishLiveModal" aria-hidden="true">
+    <div class="modal-card">
+      <button class="modal-close" id="closeFinishLiveModal">×</button>
+      <span class="eyebrow">Live Learning Studio</span>
+      <h2>إنشاء ملف المحاضرة</h2>
+      <p class="auth-note">اختر العناصر التي تريد الاحتفاظ بها في سجل المحاضرة.</p>
+      <div class="save-options-grid">
+        <label><input type="checkbox" checked data-save-item="slides"> الشرائح المحفوظة</label>
+        <label><input type="checkbox" checked data-save-item="timeline"> الخط الزمني</label>
+        <label><input type="checkbox" checked data-save-item="notes"> الملاحظات</label>
+        <label><input type="checkbox" checked data-save-item="questions"> الأسئلة</label>
+        <label><input type="checkbox" checked data-save-item="summary"> الخلاصة</label>
+        <label><input type="checkbox" data-save-item="projects"> روابط المشروعات</label>
+      </div>
+      <label class="field-label">عنوان المحاضرة</label>
+      <input class="wide-input" id="liveLectureTitle" placeholder="مثال: أساسيات الوكلاء الذكية">
+      <label class="field-label">اسم الدورة أو الجهة</label>
+      <input class="wide-input" id="liveCourseName" placeholder="اسم الدورة أو المدرب">
+      <button class="btn primary wide" id="confirmFinishLiveBtn">حفظ ملف المحاضرة</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js"></script>
-  <script src="assets/js/supabase-integration.js"></script>
+  <script src="assets/js/app.js?v=3.0.1"></script>
+  <script src="assets/js/supabase-integration.js?v=3.0.1"></script>
+  <script src="assets/js/live-studio.js?v=3.0.1"></script>
 </body>
 </html>

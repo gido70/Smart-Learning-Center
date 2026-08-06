@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.1 — Live Learning Studio
+- Added Audio, Presentation, and Hybrid capture modes.
+- Added browser screen sharing for Zoom/PowerPoint presentations.
+- Added manual slide capture, slide cards, timeline, questions, highlights, and export.
+- Added finish-session workflow and local autosave.
+- Preserved existing Supabase integration and all other modules.
+
+# Changelog
+
 ## Version 2.2 — Supabase Operational Start
 
 - Connected the interface to the existing Supabase project.

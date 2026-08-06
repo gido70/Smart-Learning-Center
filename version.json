@@ -1,0 +1,7 @@
+{
+  "version": "3.0.1",
+  "build": "2026-08-06-live-studio",
+  "supabase_integration": true,
+  "live_studio": true,
+  "notes": "Presentation capture uses the browser Screen Capture API. Slide images remain local in this build."
+}
