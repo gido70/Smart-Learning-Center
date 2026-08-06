@@ -322,7 +322,14 @@
             <article class="panel">
               <div class="panel-head"><h3>المساعد التعليمي</h3><span class="tag green">مرتبط بالمحاضرة</span></div>
               <div class="workspace-tabs"><button class="active" data-tab="summary">الخلاصة</button><button data-tab="notes">ملاحظاتي</button><button data-tab="chat">اسأل</button></div>
-              <div class="workspace-tab active" id="summaryTab"><ul class="clean-list"><li>RLS يحمي الصفوف وفق هوية المستخدم.</li><li>يجب تفعيل السياسات لكل عملية قراءة وكتابة.</li><li>الجزء الأهم يبدأ عند الدقيقة 36:10.</li></ul><button class="btn soft wide">إنشاء بطاقة معرفة</button></div>
+              <div class="workspace-tab active" id="summaryTab">
+                <div id="summaryPlaceholder">
+                  <p class="muted-note">الصق نص المحاضرة (Transcript) من يوتيوب في الخانة أدناه، ثم اضغط "لخّص الآن" للحصول على خلاصة حقيقية.</p>
+                  <textarea id="transcriptInput" class="studio-textarea" style="min-height:140px" placeholder="افتح الفيديو على يوتيوب → اضغط ⋯ أسفل الفيديو → Show transcript → انسخ النص كاملاً والصقه هنا..."></textarea>
+                  <button class="btn primary wide" id="summarizeBtn" style="margin-top:10px">✨ لخّص الآن</button>
+                </div>
+                <div id="summaryResult" class="hidden"></div>
+              </div>
               <div class="workspace-tab" id="notesTab"><textarea id="lessonNotes" placeholder="اكتب ملاحظاتك أثناء المشاهدة..."></textarea><button class="btn soft wide" id="saveNotesBtn">حفظ الملاحظات</button></div>
               <div class="workspace-tab" id="chatTab"><div class="chat-mini"><input placeholder="اسأل عن هذه المحاضرة..."/><button id="workspaceAskBtn">إرسال</button></div><div class="chat-answer" id="workspaceAnswer">ستظهر الإجابة هنا مع الإشارة إلى التوقيت.</div></div>
             </article>
@@ -374,9 +381,10 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.0.2"></script>
-  <script src="assets/js/supabase-integration.js?v=3.0.2"></script>
-  <script src="assets/js/live-studio.js?v=3.0.2"></script>
+  <script src="assets/js/app.js?v=3.0.3"></script>
+  <script src="assets/js/supabase-integration.js?v=3.0.3"></script>
+  <script src="assets/js/live-studio.js?v=3.0.3"></script>
+  <script src="assets/js/workspace.js?v=3.0.3"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>
