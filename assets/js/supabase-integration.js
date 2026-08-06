@@ -39,16 +39,26 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   }[char]));
 
+  function displayNameOf(user) {
+    if (!user) return null;
+    return user.user_metadata?.full_name || user.email?.split('@')[0] || null;
+  }
+
   function updateAuthUI() {
     const status = $('#authStatusBtn');
     const avatar = $('#userAvatar');
+    const greeting = $('#dashboardGreeting');
+    if (greeting) {
+      const name = displayNameOf(currentUser);
+      greeting.textContent = name ? `صباح الخير، ${name}` : 'صباح الخير';
+    }
     if (!status) return;
     if (currentUser) {
       const email = currentUser.email || 'مستخدم';
       status.textContent = `متصل: ${email.split('@')[0]}`;
       status.classList.add('signed-in');
       status.title = 'اضغط لتسجيل الخروج';
-      if (avatar) avatar.textContent = email.charAt(0).toUpperCase();
+      if (avatar) avatar.textContent = (displayNameOf(currentUser) || email).charAt(0).toUpperCase();
     } else {
       status.textContent = 'تسجيل الدخول';
       status.classList.remove('signed-in');
@@ -197,22 +207,29 @@
     $('#authSubmitBtn').textContent = signUp ? 'إنشاء الحساب' : 'تسجيل الدخول';
     $('#authToggleBtn').textContent = signUp ? 'لدي حساب — تسجيل الدخول' : 'ليس لدي حساب — إنشاء حساب جديد';
     $('#authMessage').textContent = '';
+    $('#authNameField')?.classList.toggle('hidden', !signUp);
   }
 
   async function submitAuth() {
     const email = $('#authEmailInput')?.value.trim();
     const password = $('#authPasswordInput')?.value || '';
+    const fullName = $('#authNameInput')?.value.trim() || '';
     const message = $('#authMessage');
     if (!email || password.length < 6) {
       message.className = 'auth-message error';
       message.textContent = 'أدخل بريدًا صحيحًا وكلمة مرور من 6 أحرف على الأقل.';
       return;
     }
+    if (authMode === 'signup' && !fullName) {
+      message.className = 'auth-message error';
+      message.textContent = 'أدخل الاسم الذي تريد أن يظهر لك في المنصة.';
+      return;
+    }
     const button = $('#authSubmitBtn');
     button.disabled = true;
     button.textContent = 'يرجى الانتظار...';
     const result = authMode === 'signup'
-      ? await db.auth.signUp({ email, password })
+      ? await db.auth.signUp({ email, password, options: { data: { full_name: fullName } } })
       : await db.auth.signInWithPassword({ email, password });
     button.disabled = false;
     setAuthMode(authMode);
