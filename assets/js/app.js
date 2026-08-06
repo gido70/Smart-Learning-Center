@@ -47,3 +47,9 @@ $('#saveNotesBtn')?.addEventListener('click',()=>{localStorage.setItem('slc_less
 if($('#lessonNotes'))$('#lessonNotes').value=localStorage.getItem('slc_lesson_notes')||'';
 $('#workspaceAskBtn')?.addEventListener('click',()=>{$('#workspaceAnswer').textContent='إجابة تجريبية: يشرح المحاضر تفعيل RLS وربط السياسة بالمستخدم الحالي عند الدقيقة 36:10.';toast('تم تحليل السؤال داخل سياق المحاضرة')});
 $$('#replayCards .text-btn, #courseCards .text-btn').forEach(b=>b.addEventListener('click',()=>showView('workspace')));
+
+// Architecture registry view — Sprint 1
+if(window.SLC_MODULES && $('#architectureGrid')){
+ const labels={prototype:'نموذج أولي',next:'التالي',planned:'مخطط'};
+ $('#architectureGrid').innerHTML=window.SLC_MODULES.map(m=>`<article class="panel architecture-card"><div class="panel-head"><h3>${m.name}</h3><span class="tag ${m.stage==='next'?'green':m.stage==='prototype'?'blue':''}">${labels[m.stage]}</span></div><p>الطابق ${m.floor}</p><small>وحدة مستقلة قابلة للتطوير والاختبار دون المساس ببقية المبنى.</small></article>`).join('');
+}
