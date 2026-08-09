@@ -40,7 +40,7 @@
   }
 
   function platformName(lecture) {
-    return lecture.slc_courses?.provider_name || ({ youtube: 'YouTube', video: 'فيديو', audio: 'صوت', pdf: 'PDF' }[lecture.source_type]) || 'منصة خارجية';
+    return lecture.slc_courses?.provider_name || ({ youtube: 'YouTube', video: 'فيديو', audio: 'صوت', pdf: 'PDF', live: 'محاضرة مباشرة' }[lecture.source_type]) || 'منصة خارجية';
   }
 
   function renderFilters() {

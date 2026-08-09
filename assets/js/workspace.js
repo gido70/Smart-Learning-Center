@@ -70,7 +70,12 @@
       placeholder.classList.remove('hidden');
       result.classList.add('hidden');
     });
-    result.append(note, body, edit);
+    const remove = document.createElement('button');
+    remove.className = 'btn ghost wide';
+    remove.style.marginTop = '8px';
+    remove.textContent = 'حذف الخلاصة وإعادة التلخيص';
+    remove.addEventListener('click', deleteCurrentSummary);
+    result.append(note, body, edit, remove);
     placeholder.classList.add('hidden');
     result.classList.remove('hidden');
   }
@@ -156,6 +161,19 @@
     toast('تم حفظ الخلاصة داخل المحاضرة');
   }
 
+  async function deleteCurrentSummary() {
+    if (!confirm('هل تريد حذف الخلاصة الحالية؟ سيبقى نص المحاضرة محفوظًا لإعادة التلخيص.')) return;
+    const record = await getCurrentRecord();
+    if (!record || !window.slcDB) return toast('تعذر تحديد المحاضرة.');
+    let query = window.slcDB.from('slc_summaries').delete();
+    query = record.kind === 'lecture' ? query.eq('lecture_id', record.id) : query.eq('course_id', record.id).is('lecture_id', null);
+    const { error } = await query;
+    if (error) return toast(`تعذر حذف الخلاصة: ${error.message}`);
+    $('summaryPlaceholder')?.classList.remove('hidden');
+    $('summaryResult')?.classList.add('hidden');
+    toast('تم حذف الخلاصة. يمكنك إنشاء خلاصة جديدة الآن.');
+  }
+
   async function runGlobalSearch(query) {
     const box = $('searchResults');
     if (!box || !window.slcDB) return;
@@ -193,5 +211,5 @@
     if (!event.target.closest('.search-wrap')) $('searchResults')?.classList.add('hidden');
   });
   if (location.hash === '#workspace') window.addEventListener('load', loadWorkspace);
-  window.slcWorkspace = { getCurrentRecord, renderSummary, saveSummaryText, toast };
+  window.slcWorkspace = { getCurrentRecord, renderSummary, saveSummaryText, deleteCurrentSummary, toast };
 })();

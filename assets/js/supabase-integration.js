@@ -112,7 +112,9 @@
     container.querySelectorAll('.course-open').forEach((button) => button.addEventListener('click', () => {
       const card = button.closest('[data-course-id]');
       localStorage.setItem('slc_current_course_id', card.dataset.courseId);
-      document.querySelector('[data-view="workspace"]')?.click();
+      localStorage.removeItem('slc_current_lecture_id');
+      if (window.slcCourseSeries) window.slcCourseSeries.open(card.dataset.courseId);
+      else document.querySelector('[data-view="workspace"]')?.click();
     }));
     container.querySelectorAll('.course-delete').forEach((button) => button.addEventListener('click', async () => {
       const card = button.closest('[data-course-id]');

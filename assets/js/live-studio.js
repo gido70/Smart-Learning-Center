@@ -61,7 +61,9 @@
     closeFinishModal: $("closeFinishLiveModal"),
     confirmFinish: $("confirmFinishLiveBtn"),
     lectureTitle: $("liveLectureTitle"),
-    courseName: $("liveCourseName")
+    courseSelect: $("liveCourseSelect"),
+    recordingUrl: $("liveRecordingUrl"),
+    lectureOrder: $("liveLectureOrder")
   };
 
   const formatTime = (seconds) => {
@@ -111,7 +113,10 @@
       mode: state.mode,
       active: state.active,
       title: el.lectureTitle?.value.trim() || "",
-      course_name: el.courseName?.value.trim() || "",
+      course_id: el.courseSelect?.value || null,
+      course_name: el.courseSelect?.selectedOptions?.[0]?.textContent || "",
+      recording_url: el.recordingUrl?.value.trim() || "",
+      lecture_order: Number(el.lectureOrder?.value || 0) || null,
       started_at: state.startedAt ? new Date(state.startedAt).toISOString() : null,
       duration_seconds: elapsed(),
       slides: enrichSlides(),
@@ -419,6 +424,7 @@
   }
 
   function openFinishModal() {
+    loadCourseOptions();
     el.finishModal.classList.add("open");
     el.finishModal.setAttribute("aria-hidden", "false");
   }
@@ -428,7 +434,41 @@
     el.finishModal.setAttribute("aria-hidden", "true");
   }
 
-  function confirmFinish() {
+  function dataUrlToBlob(dataUrl) {
+    const [header, body] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bytes = atob(body); const array = new Uint8Array(bytes.length);
+    for (let i=0;i<bytes.length;i+=1) array[i]=bytes.charCodeAt(i);
+    return new Blob([array],{type:mime});
+  }
+
+  async function loadCourseOptions() {
+    if (!el.courseSelect || !window.slcDB) return;
+    const { data } = await window.slcDB.from('slc_courses').select('id,title,provider_name').order('created_at',{ascending:false});
+    el.courseSelect.innerHTML='<option value="">اختر الدورة</option>'+(data||[]).map(c=>`<option value="${c.id}">${escapeHtml(c.provider_name?`${c.provider_name} — ${c.title}`:c.title)}</option>`).join('');
+  }
+
+  async function uploadSlides(userId, lectureId) {
+    const saved=[];
+    for (const slide of state.slides) {
+      let storage_path=null;
+      if (slide.image_data_url) {
+        const path=`${userId}/${lectureId}/slide-${String(slide.number).padStart(3,'0')}.jpg`;
+        const { error }=await window.slcDB.storage.from('slc-live-assets').upload(path,dataUrlToBlob(slide.image_data_url),{contentType:'image/jpeg',upsert:true});
+        if (!error) storage_path=path;
+      }
+      const { image_data_url, ...metadata }=slide;
+      saved.push({...metadata,storage_path});
+    }
+    return saved;
+  }
+
+  async function confirmFinish() {
+    if (!window.slcDB) return toast('اتصال قاعدة البيانات غير متاح.');
+    const title=el.lectureTitle?.value.trim();
+    const courseId=el.courseSelect?.value;
+    if (!title || !courseId) return toast('اكتب عنوان المحاضرة واختر الدورة.');
+    el.confirmFinish.disabled=true; el.confirmFinish.textContent='جاري الحفظ في المكتبة...';
     state.active = false;
     clearInterval(state.timerId);
     if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
@@ -438,8 +478,18 @@
     el.start.textContent = "● بدء جلسة جديدة";
     refreshSummary();
     saveLocal();
-    closeFinishModal();
-    toast("تم إنشاء ملف المحاضرة وحفظه محليًا");
+    const file=buildLectureFile();
+    const {data:{user}}=await window.slcDB.auth.getUser();
+    if (!user) { el.confirmFinish.disabled=false; el.confirmFinish.textContent='حفظ ملف المحاضرة'; return toast('سجّل الدخول أولًا.'); }
+    const {data:lecture,error}=await window.slcDB.from('slc_lectures').insert({owner_id:user.id,course_id:courseId,title,source_url:file.recording_url||null,source_type:'live',open_mode:file.recording_url?'external':'auto',module_name:'محاضرة مباشرة',lecture_order:file.lecture_order,duration_minutes:Math.max(1,Math.round(file.duration_seconds/60)),status:'completed',session_kind:'live',notes:file.highlights.join('\n'),archived_at:new Date().toISOString(),live_payload:{mode:file.mode,started_at:file.started_at,duration_seconds:file.duration_seconds,timeline:file.timeline,questions:file.questions,highlights:file.highlights,quick_summary:file.quick_summary}}).select('id').single();
+    if(error){el.confirmFinish.disabled=false;el.confirmFinish.textContent='حفظ ملف المحاضرة';return toast(`تعذر حفظ المحاضرة: ${error.message}`);}
+    const slides=await uploadSlides(user.id,lecture.id);
+    await window.slcDB.from('slc_lectures').update({live_payload:{...file,slides,slides_count:slides.length}}).eq('id',lecture.id);
+    if(file.quick_summary && file.quick_summary.length>20) await window.slcDB.from('slc_summaries').upsert({owner_id:user.id,course_id:courseId,lecture_id:lecture.id,summary_key:`lecture:${lecture.id}`,summary_html:file.quick_summary,updated_at:new Date().toISOString()},{onConflict:'summary_key'});
+    localStorage.setItem('slc_current_course_id',courseId);localStorage.setItem('slc_current_lecture_id',lecture.id);
+    localStorage.removeItem('slc_live_studio_draft_v301');
+    el.confirmFinish.disabled=false; el.confirmFinish.textContent='حفظ ملف المحاضرة'; closeFinishModal();
+    toast("تم حفظ المحاضرة المباشرة في المكتبة");
   }
 
   function download(filename, content, type) {

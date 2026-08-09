@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.3.0 — Course Series and Live Archive
+- Added ordered multi-day course views and combined course summaries.
+- Added deletion and replacement of saved lecture summaries.
+- Completed the live-session transition into the lecture library.
+- Added private slide storage for live-session captures.
+- Preserved the full long-term product requirements inside the repository.
+
 ## 3.2.0 — Scientific Lecture Summarizer
 - Added a private in-platform Arabic summarizer with no external AI key or usage charge.
 - Added thematic segmentation so every part of a long lecture contributes to the result.
