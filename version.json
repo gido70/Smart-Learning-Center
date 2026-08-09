@@ -1,5 +1,5 @@
 {
-  "version": "3.5.0",
+  "version": "3.5.1",
   "build": "2026-08-09-personal-lecture-portal",
   "supabase_integration": true,
   "live_studio": true,

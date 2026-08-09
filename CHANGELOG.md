@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.5.1 — Transcript Repair
+- Removed malformed speech-to-text timestamps such as `8g ثواني` and `44g دقيقة`.
+- Expanded Egyptian-to-MSA normalization for the expressions found in the uploaded lecture.
+- Removed isolated Latin timestamp markers left by transcript services.
+
 ## 3.5.0 — Arabic Study Summaries
 - Removed spoken timestamps from pasted transcripts.
 - Added educational Modern Standard Arabic normalization for common Egyptian, Sudanese, Gulf, and Levantine expressions.
