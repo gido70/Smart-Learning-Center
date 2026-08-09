@@ -11,7 +11,6 @@ $$('.choice').forEach(b=>b.addEventListener('click',()=>{$$('.choice').forEach(x
 $$('.time-pills button').forEach(b=>b.addEventListener('click',()=>{$$('.time-pills button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
 
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus()}if(e.key==='Escape')closeModal()});
-$('#globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){toast(`جاري البحث عن: ${e.target.value}`);showView('chat')}});
 
 const replay=[['تحليل سياسات RLS في Supabase','02:18:40','90% فائدة في 24 دقيقة','green'],['بناء وكيل ذكاء اصطناعي في n8n','01:42:15','8 فصول · 12 خطوة عملية','purple'],['GitHub Actions للمبتدئين','03:05:00','يمكن تجاوز 41% من المحتوى','blue'],['أساسيات المحادثة الإنجليزية','01:15:20','34 مفردة · 12 تمريناً','orange'],['Whisper والتفريغ الصوتي','00:58:11','جاهز للمراجعة','green'],['بناء واجهة موبايل احترافية','02:44:02','مرتبط بمشروعين','purple']];
 $('#replayCards').innerHTML=replay.map(x=>`<article class="content-card"><div class="content-cover ${x[3]}"><span class="tag">محاضرة مسجلة</span><b>${x[1]}</b></div><div class="content-body"><h3>${x[0]}</h3><p>${x[2]}</p><div class="card-meta"><span>تم التحليل</span><button class="text-btn">فتح</button></div></div></article>`).join('');
