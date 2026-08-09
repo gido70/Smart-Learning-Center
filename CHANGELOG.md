@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.5.0 — Arabic Study Summaries
+- Removed spoken timestamps from pasted transcripts.
+- Added educational Modern Standard Arabic normalization for common Egyptian, Sudanese, Gulf, and Levantine expressions.
+- Reduced repeated ideas and blocked timestamp-heavy fragments.
+- Activated course status filters and course search.
+- Added deletion and regeneration of the combined course summary.
+- Replaced the combined-summary browser alert with the normal in-platform notification.
+
 ## 3.4.0 — Lecture Management Consolidation
 - Added lecture editing from the lecture portal, course series, and workspace.
 - Added course reassignment and ordering without re-uploading a lecture.

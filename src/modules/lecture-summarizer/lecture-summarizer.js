@@ -14,6 +14,22 @@
     definition: /(?:تعريف|يعني|يُقصد|يقصد|مفهوم|مصطلح|هو عبارة|هي عبارة|نسميه)/
   };
   const NOISE = /^(?:السلام عليكم|وعليكم السلام|شكرا|شكراً|اهلا|أهلا|مرحبا|طيب|تمام|نعم|ايوه|أيوه|هل الصوت|واضح الصوت|من لديه سؤال|أي سؤال|نشوفكم|يعطيكم العافية)/;
+  const DIALECT_RULES = [
+    [/كل العمليات اللي/gu,'جميع العمليات التي'],[/\bنقدر نستفيد\b/gu,'يمكننا الاستفادة'],[/\bونقدر نستفيد\b/gu,'ويمكننا الاستفادة'],
+    [/\bعايزين نستخدم\b/gu,'نريد استخدام'],[/\bعاوزين نستخدم\b/gu,'نريد استخدام'],[/من اول العمل/gu,'منذ بداية العمل'],
+    [/\bما نعتقدش\b/gu,'لا نعتقد'],[/\bما عندناش\b/gu,'ليس لدينا'],[/\bما عنديش\b/gu,'ليس لدي'],[/\bمفيش\b/gu,'لا يوجد'],
+    [/\bمش بيتعب\b/gu,'لا يتعب'],[/\bمش موجود\b/gu,'غير موجود'],[/\bمش\b/gu,'ليس'],
+    [/\bاحنا\b/gu,'نحن'],[/\bإحنا\b/gu,'نحن'],[/\bعايزين\b/gu,'نريد'],[/\bعاوزين\b/gu,'نريد'],[/\bعايز\b/gu,'أريد'],[/\bعاوز\b/gu,'أريد'],
+    [/\bهكون\b/gu,'سأكون'],[/\bهحس\b/gu,'سأدرك'],[/\bهنكون\b/gu,'سنكون'],[/\bهنعمل\b/gu,'سننفذ'],[/\bبنعمل\b/gu,'ننفذ'],[/\bبنستخدم\b/gu,'نستخدم'],
+    [/\bبنفكر\b/gu,'نفكر'],[/\bبنشوف\b/gu,'نرى'],[/\bبيفكر\b/gu,'يفكر'],[/\bبيستخدم\b/gu,'يستخدم'],[/\bبيعمل\b/gu,'يعمل'],[/\bبيتعب\b/gu,'يتعب'],
+    [/\bبتاعنا\b/gu,'الخاص بنا'],[/\bبتاع\b/gu,'الخاص بـ'],[/\bدلوقتي\b/gu,'الآن'],[/\bكده\b/gu,'هكذا'],[/\bكدا\b/gu,'هكذا'],[/\bازاي\b/gu,'كيف'],
+    [/\bإزاي\b/gu,'كيف'],[/\bليه\b/gu,'لماذا'],[/\bاللي\b/gu,'الذي'],[/\bما نقدرش\b/gu,'لا نستطيع'],[/\bنقدر\b/gu,'يمكننا'],
+    [/\bاقدر\b/gu,'أستطيع'],[/\bأقدر\b/gu,'أستطيع'],[/\bاشوف\b/gu,'أرى'],[/\bأشوف\b/gu,'أرى'],[/\bبيها\b/gu,'منها'],[/\bزينا\b/gu,'مثلنا'],[/\bمن اول\b/gu,'منذ البداية'],[/\bكتر\b/gu,'كثرة'],
+    [/\bهسي\b/gu,'الآن'],[/\bهسه\b/gu,'الآن'],[/\bزول\b/gu,'شخص'],[/\bشديد\b/gu,'جدًا'],[/\bدا\b/gu,'هذا'],[/\bدي\b/gu,'هذه'],
+    [/\bالحين\b/gu,'الآن'],[/\bوايد\b/gu,'كثيرًا'],[/\bشلون\b/gu,'كيف'],[/\bمو\b/gu,'ليس'],[/\bأبي\b/gu,'أريد'],
+    [/\bبدنا\b/gu,'نريد'],[/\bشو\b/gu,'ماذا'],[/\bهلق\b/gu,'الآن'],[/\bهيك\b/gu,'هكذا'],[/\bبدي\b/gu,'أريد']
+  ];
+  const FILLERS = /(?:^|[،,؛]\s*|\s+)(?:يعني|طيب|تمام|بصراحة|الحقيقة|طبعًا|طبعا|بقى|اه|آه|أمم|مثلا كده|زي ما قلنا)(?=\s|[،,؛.!؟]|$)/gu;
 
   function normalize(value = '') {
     return String(value).replace(/[\u064B-\u065F\u0670ـ]/g, '').replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').toLowerCase();
@@ -24,18 +40,32 @@
   }
 
   function cleanTranscript(raw) {
-    return String(raw || '')
+    let text = String(raw || '')
       .replace(/\r/g, '\n')
       .replace(/^\s*(?:\[)?\d{1,2}:\d{2}(?::\d{2})?(?:\])?\s*/gm, '')
+      .replace(/(?<![\p{L}\p{N}])\d{1,2}:\d{2}(?::\d{2})?(?![\p{L}\p{N}])/gu, ' ')
+      .replace(/(?:^|\s)(?:من\s+)?(?:ال)?ساعة\s*و?\s*\d+\s*(?:دقيقة|دقائق)(?:\s*و?\s*\d+\s*(?:ثانية|ثوان|ثواني))?(?![\p{L}\p{N}])/gu, ' ')
+      .replace(/(?<![\p{L}\p{N}])\d+\s*(?:ساعة|ساعات|ساعتان)(?:\s*و?\s*\d+\s*(?:دقيقة|دقائق))?(?:\s*و?\s*\d+\s*(?:ثانية|ثوان|ثواني))?(?![\p{L}\p{N}])/gu, ' ')
+      .replace(/(?<![\p{L}\p{N}])\d+\s*(?:دقيقة|دقائق)(?:\s*و?\s*\d+\s*(?:ثانية|ثوان|ثواني))?(?![\p{L}\p{N}])/gu, ' ')
+      .replace(/(?<![\p{L}\p{N}])\d+\s*(?:ثانية|ثوان|ثواني)(?![\p{L}\p{N}])/gu, ' ')
       .replace(/\n{3,}/g, '\n\n')
       .replace(/[ \t]+/g, ' ')
       .trim();
+    DIALECT_RULES.forEach(([pattern,replacement])=>{
+      // \b لا يتعرّف إلى حدود الكلمات العربية في JavaScript؛ نحوله إلى حد Unicode حقيقي.
+      const source = pattern.source.startsWith('\\b') && pattern.source.endsWith('\\b')
+        ? `(?<![\\p{L}\\p{N}_])${pattern.source.slice(2,-2)}(?![\\p{L}\\p{N}_])`
+        : pattern.source;
+      text=text.replace(new RegExp(source, pattern.flags),replacement);
+    });
+    return text.replace(FILLERS,' ').replace(/\s+([،؛.!؟])/g,'$1').replace(/ {2,}/g,' ').trim();
   }
 
   function splitSentences(text) {
     return text.split(/(?<=[.!؟!?؛])\s+|\n+/u)
       .map((sentence) => sentence.replace(/^[-–—•\s]+/, '').trim())
-      .filter((sentence) => sentence.length >= 24 && tokens(sentence).length >= 4 && !NOISE.test(normalize(sentence)))
+      .filter((sentence) => sentence.length >= 32 && sentence.length <= 420 && tokens(sentence).length >= 5 && !NOISE.test(normalize(sentence)))
+      .filter((sentence)=>!/(?:^|\s)(?:ساعة|دقيقة|ثانية|ثواني)(?:\s|$)/u.test(sentence))
       .map((text, index) => ({ text, index, words: tokens(text) }));
   }
 
@@ -92,7 +122,7 @@
     if (sentences.length < 3) throw new Error('النص قصير أو غير واضح بما يكفي. ألصق نص المحاضرة كاملاً.');
     const freq = frequency(sentences);
     // ملخص ثابت الحجم تقريباً مهما طالت المحاضرة: القيمة لا إعادة كتابة النص.
-    const executive = choose(sentences, Math.min(12, Math.max(8, Math.ceil(Math.log2(sentences.length) * 1.35))), freq);
+    const executive = choose(sentences, Math.min(10, Math.max(7, Math.ceil(Math.log2(sentences.length) * 1.15))), freq);
     const bySignal = (name, limit) => choose(sentences.filter((item) => SIGNALS[name].test(normalize(item.text))), limit, freq);
     let actions = bySignal('action', 6);
     let notes = choose([
@@ -103,8 +133,9 @@
     [actions, notes] = uniqueAcross([actions.filter((item) => !executive.some((main) => similarity(item, main) > 0.48)), notes]);
     const urls = [...new Set(String(raw).match(/https?:\/\/[^\s<>"']+/gi) || [])].slice(0, 15);
     const topWords = keywords(sentences, 12);
-    const opening = executive.slice(0, 3).map((item) => item.text).join(' ');
-    return `# خلاصة المحاضرة: ${title}\n\n## ما موضوع المحاضرة وما فائدتها؟\n${opening}\n\n## الزبدة التي تستحق الاحتفاظ بها\n${bullets(executive, 'لم تتوفر أفكار كافية.')}\n\n## كيف أستفيد منها عملياً؟\n${bullets(actions, 'لم تتضمن المحاضرة خطوات تطبيقية صريحة؛ فائدتها معرفية أو تفسيرية بالدرجة الأولى.')}\n\n## ملاحظات مهمة للرجوع إليها\n${bullets(notes, 'لا توجد ملاحظات إضافية مؤثرة خارج الخلاصة.')}\n\n## المواقع والروابط المذكورة\n${urls.length ? urls.map((url) => `- ${url}`).join('\n') : '- لم يظهر رابط مكتوب بوضوح داخل نص المحاضرة.'}\n\n## كلمات تساعد في البحث داخل المنصة\n${topWords.join('، ')}\n\n> حُذفت المقدمات والنقاشات والتكرار والأمثلة غير الضرورية، وأُبقيت النتائج والمعلومات القابلة للفهم أو التطبيق.`;
+    const opening = executive.slice(0, 2).map((item) => item.text).join(' ');
+    const takeaways = executive.slice(2);
+    return `# خلاصة المحاضرة: ${title}\n\n## موضوع المحاضرة وفائدتها\n${opening}\n\n## أهم النتائج والأفكار\n${bullets(takeaways, 'لم تتوفر أفكار واضحة كافية في النص.')}\n\n## كيف أستفيد منها عمليًا؟\n${bullets(actions, 'لم تتضمن المحاضرة خطوات تطبيقية صريحة؛ فائدتها معرفية أو تفسيرية بالدرجة الأولى.')}\n\n## ملاحظات مهمة للرجوع إليها\n${bullets(notes, 'لا توجد ملاحظات إضافية مؤثرة خارج الخلاصة.')}\n\n## المواقع والروابط المذكورة\n${urls.length ? urls.map((url) => `- ${url}`).join('\n') : '- لم يظهر رابط مكتوب بوضوح داخل نص المحاضرة.'}\n\n## كلمات تساعد في البحث داخل المنصة\n${topWords.join('، ')}\n\n> صيغت الخلاصة بالعربية الفصحى المبسطة، وحُذفت التوقيتات والمقدمات والتكرار والنقاشات غير الضرورية.`;
   }
 
   async function summarizeNow() {

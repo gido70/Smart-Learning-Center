@@ -344,7 +344,7 @@
       </section>
 
       <section class="view" id="replay"><div class="page-head"><div><span class="eyebrow">Personal Lecture Portal</span><h2>بوابة المحاضرات</h2><p>كل محاضراتك من YouTube والمنصات الجامعية والمدفوعة والملفات الخاصة في مكان واحد.</p></div><button class="btn primary" id="addLectureBtn">＋ إضافة محاضرة</button></div><div class="platform-strip" id="lecturePlatformFilters"><button class="active" data-platform-filter="all">كل المنصات</button></div><div class="cards-grid" id="replayCards"></div></section>
-      <section class="view" id="courses"><div class="page-head"><div><span class="eyebrow">Course Library</span><h2>مكتبة الكورسات</h2><p>جميع دوراتك من YouTube والمنصات المدفوعة والملفات الخاصة في مكان واحد.</p></div><button class="btn primary" id="addCourseBtn">＋ إضافة كورس</button></div><div class="filter-row"><button class="active">الكل</button><button>قيد التعلّم</button><button>تحتاج مراجعة</button><button>مكتملة</button><input placeholder="بحث داخل الكورسات"/></div><div class="cards-grid" id="courseCards"></div></section>
+      <section class="view" id="courses"><div class="page-head"><div><span class="eyebrow">Course Library</span><h2>مكتبة الكورسات</h2><p>جميع دوراتك من YouTube والمنصات المدفوعة والملفات الخاصة في مكان واحد.</p></div><button class="btn primary" id="addCourseBtn">＋ إضافة كورس</button></div><div class="filter-row" id="courseFilters"><button class="active" data-course-status="all">الكل</button><button data-course-status="active">قيد التعلّم</button><button data-course-status="paused">تحتاج مراجعة</button><button data-course-status="completed">مكتملة</button><input id="courseSearchInput" placeholder="بحث داخل الكورسات"/></div><div class="cards-grid" id="courseCards"></div></section>
       <section class="view" id="inbox"><div class="page-head"><div><span class="eyebrow">Knowledge Inbox</span><h2>صندوق المعرفة</h2><p>ألصق أي رابط الآن، واتخذ قرار المعالجة لاحقاً دون أن تضيع الفكرة.</p></div><button class="btn primary" id="openAddModal">＋ إضافة مصدر</button></div><div class="inbox-board" id="inboxBoard"></div></section>
       <section class="view" id="micro"><div class="page-head"><div><span class="eyebrow">Micro Learning Center</span><h2>التعلّم السريع</h2><p>حوّل Shorts وReels وTikTok وX إلى كبسولات معرفة قابلة للبحث والتجميع.</p></div><button class="btn primary">＋ إضافة رابط قصير</button></div><div class="platform-strip"><span>YouTube Shorts</span><span>Instagram Reels</span><span>Facebook Reels</span><span>TikTok</span><span>X</span></div><div class="micro-grid" id="microCards"></div></section>
       <section class="view" id="projects"><div class="page-head"><div><span class="eyebrow">Project Intelligence</span><h2>ربط التعلّم بالمشروعات</h2><p>اعرف ما الذي تعلمته وما الذي ينقص كل مشروع قبل التنفيذ.</p></div><button class="btn primary">＋ مشروع جديد</button></div><div class="project-grid" id="projectCards"></div></section>
@@ -419,13 +419,13 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.4.0"></script>
-  <script src="assets/js/supabase-integration.js?v=3.4.0"></script>
-  <script src="assets/js/live-studio.js?v=3.4.0"></script>
-  <script src="assets/js/workspace.js?v=3.4.0"></script>
-  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.4.0"></script>
-  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.4.0"></script>
-  <script src="src/modules/course-series/course-series.js?v=3.4.0"></script>
+  <script src="assets/js/app.js?v=3.5.0"></script>
+  <script src="assets/js/supabase-integration.js?v=3.5.0"></script>
+  <script src="assets/js/live-studio.js?v=3.5.0"></script>
+  <script src="assets/js/workspace.js?v=3.5.0"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.0"></script>
+  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.0"></script>
+  <script src="src/modules/course-series/course-series.js?v=3.5.0"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>

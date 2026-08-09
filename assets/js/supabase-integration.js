@@ -17,6 +17,8 @@
   const $ = (selector) => document.querySelector(selector);
   let currentUser = null;
   let selectedSourceType = 'youtube';
+  let courseStatusFilter = 'all';
+  let courseSearchTerm = '';
   const authMode = 'signin'; // المنصة شخصية: لا يوجد إنشاء حسابات من الواجهة
 
   const modalOpen = (el) => {
@@ -96,8 +98,17 @@
       container.innerHTML = '<div class="empty-state"><h3>لا توجد كورسات بعد</h3><p>اضغط «إضافة كورس» وابدأ بإدخال أول دورة.</p></div>';
       return;
     }
+    const visibleCourses = data.filter((course) => {
+      const statusMatches = courseStatusFilter === 'all' || course.status === courseStatusFilter;
+      const haystack = `${course.title || ''} ${course.provider_name || ''} ${course.instructor_name || ''}`.toLowerCase();
+      return statusMatches && (!courseSearchTerm || haystack.includes(courseSearchTerm));
+    });
+    if (!visibleCourses.length) {
+      container.innerHTML = '<div class="empty-state"><h3>لا توجد دورات مطابقة</h3><p>غيّر الحالة أو عبارة البحث.</p></div>';
+      return;
+    }
     const statusLabel = { planned: 'مخطط', active: 'قيد التعلّم', paused: 'متوقف', completed: 'مكتمل', archived: 'مؤرشف' };
-    container.innerHTML = data.map((course, index) => {
+    container.innerHTML = visibleCourses.map((course, index) => {
       const color = ['green', 'purple', 'blue', 'orange'][index % 4];
       const progress = Number(course.progress_percent || 0);
       return `<article class="content-card" data-course-id="${course.id}">
@@ -244,6 +255,16 @@
   $('#closeCourseModal')?.addEventListener('click', () => modalClose($('#courseModal')));
   $('#saveCourseBtn')?.addEventListener('click', saveCourse);
   $('#saveSourceBtn')?.addEventListener('click', saveSource);
+  document.querySelectorAll('#courseFilters [data-course-status]').forEach((button)=>button.addEventListener('click',()=>{
+    courseStatusFilter=button.dataset.courseStatus;
+    document.querySelectorAll('#courseFilters [data-course-status]').forEach(item=>item.classList.toggle('active',item===button));
+    loadCourses();
+  }));
+  let courseSearchTimer;
+  $('#courseSearchInput')?.addEventListener('input',(event)=>{
+    clearTimeout(courseSearchTimer);
+    courseSearchTimer=setTimeout(()=>{courseSearchTerm=event.target.value.trim().toLowerCase();loadCourses();},250);
+  });
 
   document.querySelectorAll('#sourceTypeGrid [data-source]').forEach((button) => button.addEventListener('click', () => {
     selectedSourceType = button.dataset.source;
