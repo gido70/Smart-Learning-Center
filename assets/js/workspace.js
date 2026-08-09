@@ -28,6 +28,35 @@
     setTimeout(() => node.classList.remove('show'), 2600);
   }
 
+  function renderSummary(html, isSaved) {
+    const placeholder = $('summaryPlaceholder');
+    const result = $('summaryResult');
+    placeholder.classList.add('hidden');
+    result.classList.remove('hidden');
+    const savedNote = isSaved
+      ? '<p class="muted-note">✅ هذه خلاصة محفوظة مسبقاً — لم تُستهلك تكلفة API لعرضها.</p>'
+      : '';
+    result.innerHTML = `${savedNote}${html}<button class="btn soft wide" id="redoSummaryBtn" style="margin-top:12px">🔁 تلخيص نص آخر</button>`;
+    $('redoSummaryBtn')?.addEventListener('click', () => {
+      placeholder.classList.remove('hidden');
+      result.classList.add('hidden');
+    });
+  }
+
+  async function saveSummaryToDatabase(html) {
+    const courseId = localStorage.getItem('slc_current_course_id');
+    if (!courseId || !window.slcDB) return;
+    const { data: { user } } = await window.slcDB.auth.getUser();
+    if (!user) return;
+    const { error } = await window.slcDB
+      .from('slc_summaries')
+      .upsert(
+        { course_id: courseId, owner_id: user.id, summary_html: html, updated_at: new Date().toISOString() },
+        { onConflict: 'course_id' }
+      );
+    if (error) console.error('تعذر حفظ الخلاصة:', error);
+  }
+
   // ------------------------------------------------------------
   // تحميل بيانات الكورس الحقيقي المحدَّد من مكتبة الكورسات
   // ------------------------------------------------------------
@@ -72,13 +101,23 @@
     // إعادة ضبط منطقة التلخيص عند تبديل الكورس
     const placeholder = $('summaryPlaceholder');
     const result = $('summaryResult');
-    if (placeholder) placeholder.classList.remove('hidden');
-    if (result) {
+    const transcriptInput = $('transcriptInput');
+    if (transcriptInput) transcriptInput.value = '';
+
+    // هل توجد خلاصة محفوظة مسبقاً لهذا الكورس؟ اعرضها فوراً بدل تلخيص جديد
+    const { data: savedSummary } = await window.slcDB
+      .from('slc_summaries')
+      .select('summary_html, updated_at')
+      .eq('course_id', courseId)
+      .maybeSingle();
+
+    if (savedSummary?.summary_html) {
+      renderSummary(savedSummary.summary_html, true);
+    } else if (placeholder && result) {
+      placeholder.classList.remove('hidden');
       result.classList.add('hidden');
       result.innerHTML = '';
     }
-    const transcriptInput = $('transcriptInput');
-    if (transcriptInput) transcriptInput.value = '';
   }
 
   // ------------------------------------------------------------
@@ -160,16 +199,9 @@
       const data = await response.json();
       const html = data?.content?.[0]?.text || '<p>لم يصل رد صالح من النموذج.</p>';
 
-      const placeholder = $('summaryPlaceholder');
-      const result = $('summaryResult');
-      placeholder.classList.add('hidden');
-      result.classList.remove('hidden');
-      result.innerHTML = `${html}<button class="btn soft wide" id="redoSummaryBtn" style="margin-top:12px">🔁 تلخيص نص آخر</button>`;
-      $('redoSummaryBtn')?.addEventListener('click', () => {
-        placeholder.classList.remove('hidden');
-        result.classList.add('hidden');
-      });
-      toast('تم التلخيص بنجاح');
+      renderSummary(html, false);
+      await saveSummaryToDatabase(html);
+      toast('تم التلخيص وحفظه بنجاح');
     } catch (error) {
       console.error(error);
       toast(`تعذر التلخيص: ${error.message}`);
@@ -186,4 +218,88 @@
   if (location.hash === '#workspace') {
     window.addEventListener('load', loadWorkspace);
   }
+
+  // ------------------------------------------------------------
+  // البحث الحقيقي: عناوين الكورسات + نصوص الخلاصات المحفوظة معاً
+  // ------------------------------------------------------------
+  function excerptAround(text, query) {
+    const plain = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const index = plain.toLowerCase().indexOf(query.toLowerCase());
+    if (index === -1) return plain.slice(0, 90);
+    const start = Math.max(0, index - 30);
+    return (start > 0 ? '…' : '') + plain.slice(start, start + 110) + '…';
+  }
+
+  function openCourseFromSearch(courseId) {
+    localStorage.setItem('slc_current_course_id', courseId);
+    $('searchResults')?.classList.add('hidden');
+    if ($('globalSearch')) $('globalSearch').value = '';
+    document.querySelector('[data-view="workspace"]')?.click();
+  }
+
+  async function runGlobalSearch(query) {
+    const box = $('searchResults');
+    if (!box || !window.slcDB) return;
+    if (query.trim().length < 2) {
+      box.classList.add('hidden');
+      return;
+    }
+
+    const [{ data: courses }, { data: summaries }] = await Promise.all([
+      window.slcDB.from('slc_courses').select('id,title,provider_name').ilike('title', `%${query}%`).limit(6),
+      window.slcDB.from('slc_summaries').select('course_id,summary_html').ilike('summary_html', `%${query}%`).limit(6)
+    ]);
+
+    const courseIds = new Set((courses || []).map((c) => c.id));
+    const extraIds = (summaries || []).map((s) => s.course_id).filter((id) => !courseIds.has(id));
+
+    let extraCourses = [];
+    if (extraIds.length) {
+      const { data } = await window.slcDB.from('slc_courses').select('id,title,provider_name').in('id', extraIds);
+      extraCourses = data || [];
+    }
+
+    const results = [
+      ...(courses || []).map((course) => ({
+        id: course.id,
+        title: course.title,
+        snippet: course.provider_name || 'عنوان مطابق',
+        icon: '🎓'
+      })),
+      ...extraCourses.map((course) => {
+        const match = (summaries || []).find((s) => s.course_id === course.id);
+        return {
+          id: course.id,
+          title: course.title,
+          snippet: match ? excerptAround(match.summary_html, query) : '',
+          icon: '📝'
+        };
+      })
+    ];
+
+    if (!results.length) {
+      box.innerHTML = '<div class="search-empty">لا نتائج مطابقة</div>';
+      box.classList.remove('hidden');
+      return;
+    }
+
+    box.innerHTML = results
+      .map((r) => `<button class="search-result-item" data-course-id="${r.id}"><h4>${r.icon} ${r.title}</h4><p>${r.snippet}</p></button>`)
+      .join('');
+    box.querySelectorAll('.search-result-item').forEach((btn) => {
+      btn.addEventListener('click', () => openCourseFromSearch(btn.dataset.courseId));
+    });
+    box.classList.remove('hidden');
+  }
+
+  let searchDebounce;
+  const searchInput = document.getElementById('globalSearch');
+  searchInput?.addEventListener('input', (e) => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => runGlobalSearch(e.target.value), 350);
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-wrap')) $('searchResults')?.classList.add('hidden');
+  });
 })();
+
