@@ -1,7 +1,9 @@
 {
-  "version": "3.0.1",
-  "build": "2026-08-06-live-studio",
+  "version": "3.1.0",
+  "build": "2026-08-09-personal-lecture-portal",
   "supabase_integration": true,
   "live_studio": true,
-  "notes": "Presentation capture uses the browser Screen Capture API. Slide images remain local in this build."
+  "lecture_portal": true,
+  "ai_api_in_frontend": false,
+  "notes": "Personal lecture portal with Supabase RLS, unified search, external-platform fallback, and a no-API ChatGPT summary workflow."
 }

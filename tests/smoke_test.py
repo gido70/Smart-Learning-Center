@@ -3,7 +3,7 @@ import sys
 root=Path(__file__).resolve().parents[1]
 index=(root/'index.html').read_text(encoding='utf-8')
 app=(root/'assets/js/app.js').read_text(encoding='utf-8')
-required_views=['dashboard','advisor','live','replay','workspace','courses','inbox','micro','projects','graph','review','factory','chat','analytics','settings','architecture']
+required_views=['dashboard','advisor','live','replay','workspace','courses','inbox','micro','projects','graph','review','factory','chat','analytics','settings']
 required_files=['index.html','assets/css/app.css','assets/js/app.js','AGENTS.md','CHANGELOG.md','src/core/module-registry.js']
 errors=[]
 for f in required_files:
@@ -13,6 +13,8 @@ for view in required_views:
 for token in ['watchInsideBtn','watchOutsideBtn','savePointBtn','lessonNotes','quickAddBtn']:
     if token not in index+app: errors.append(f'وظيفة أساسية مفقودة: {token}')
 if 'dir="rtl"' not in index: errors.append('دعم RTL مفقود')
+for token in ['addLectureBtn','lectureModal','prepareSummaryBtn','saveSummaryBtn','lecture-portal.js']:
+    if token not in index: errors.append(f'بوابة المحاضرات مفقودة: {token}')
 if errors:
     print('SMOKE TEST FAILED')
     print('\n'.join(errors))

@@ -1,305 +1,212 @@
 /**
- * workspace.js — مساحة عمل المحاضرة
- * يربط بيانات الكورس الحقيقية (من Supabase) بالواجهة بدل النموذج الثابت،
- * ويضيف تلخيصاً حقيقياً عبر Claude API بناءً على نص يلصقه المستخدم.
+ * workspace.js — مساحة عمل المحاضرة الشخصية
+ * يدعم YouTube والمصادر الخارجية والملفات المباشرة، ويستخدم اشتراك ChatGPT
+ * يدوياً دون أي مفتاح API أو اتصال بمزود ذكاء من داخل الموقع.
  */
 (() => {
   'use strict';
 
   const $ = (id) => document.getElementById(id);
-  const CLAUDE_MODEL = 'claude-sonnet-4-6';
-  const KEY_STORAGE = 'slc_anthropic_key';
-
-  function extractYouTubeId(url) {
-    if (!url) return null;
-    const patterns = [/(?:v=|\/)([0-9A-Za-z_-]{11}).*/, /youtu\.be\/([0-9A-Za-z_-]{11})/];
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match) return match[1];
-    }
-    return null;
-  }
+  const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[char]));
 
   function toast(message) {
     const node = $('toast');
     if (!node) return;
     node.textContent = message;
     node.classList.add('show');
-    setTimeout(() => node.classList.remove('show'), 2600);
+    setTimeout(() => node.classList.remove('show'), 2800);
   }
 
-  function renderSummary(html, isSaved) {
+  function extractYouTubeId(url = '') {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([0-9A-Za-z_-]{11})/);
+    return match?.[1] || null;
+  }
+
+  function setPlayer(url, sourceType = 'external', openMode = 'auto') {
+    const frame = $('lessonFrame');
+    const fallback = $('embedFallback');
+    const badge = $('embedBadge');
+    const outside = $('watchOutsideBtn');
+    if (!frame || !fallback || !badge || !outside) return;
+
+    outside.href = url || '#';
+    fallback.querySelector('a').href = url || '#';
+    const youtubeId = extractYouTubeId(url);
+    const directInternal = ['youtube', 'video', 'audio', 'pdf'].includes(sourceType);
+    const externalOnly = openMode === 'external';
+
+    if (externalOnly || !url) {
+      frame.style.display = 'none';
+      fallback.classList.add('show');
+      badge.textContent = '● يفتح في المصدر الأصلي';
+      badge.className = 'embed-badge blocked';
+      return;
+    }
+
+    frame.style.display = 'block';
+    fallback.classList.remove('show');
+    frame.src = youtubeId ? `https://www.youtube.com/embed/${youtubeId}?rel=0` : url;
+    badge.textContent = directInternal ? '● عرض داخلي متاح' : '● تجربة العرض داخل المنصة';
+    badge.className = directInternal ? 'embed-badge supported' : 'embed-badge';
+  }
+
+  function renderSummary(text, isSaved = true) {
     const placeholder = $('summaryPlaceholder');
     const result = $('summaryResult');
-    placeholder.classList.add('hidden');
-    result.classList.remove('hidden');
-    const savedNote = isSaved
-      ? '<p class="muted-note">✅ هذه خلاصة محفوظة مسبقاً — لم تُستهلك تكلفة API لعرضها.</p>'
-      : '';
-    result.innerHTML = `${savedNote}${html}<button class="btn soft wide" id="redoSummaryBtn" style="margin-top:12px">🔁 تلخيص نص آخر</button>`;
-    $('redoSummaryBtn')?.addEventListener('click', () => {
+    if (!placeholder || !result) return;
+    result.innerHTML = '';
+    const note = document.createElement('p');
+    note.className = 'muted-note';
+    note.textContent = isSaved ? '✅ خلاصة محفوظة داخل محاضرتك' : 'الخلاصة';
+    const body = document.createElement('div');
+    body.className = 'saved-summary-text';
+    body.textContent = text;
+    const edit = document.createElement('button');
+    edit.className = 'btn soft wide';
+    edit.textContent = 'تعديل أو استبدال الخلاصة';
+    edit.addEventListener('click', () => {
+      $('summaryPasteInput').value = text;
       placeholder.classList.remove('hidden');
       result.classList.add('hidden');
     });
+    result.append(note, body, edit);
+    placeholder.classList.add('hidden');
+    result.classList.remove('hidden');
   }
 
-  async function saveSummaryToDatabase(html) {
+  async function getCurrentRecord() {
+    if (!window.slcDB) return null;
+    const lectureId = localStorage.getItem('slc_current_lecture_id');
+    if (lectureId) {
+      const { data } = await window.slcDB.from('slc_lectures')
+        .select('id,course_id,title,source_url,source_type,open_mode,module_name,lecture_order,duration_minutes,status,notes,last_position_seconds,slc_courses(title,provider_name)')
+        .eq('id', lectureId).maybeSingle();
+      if (data) return { kind: 'lecture', ...data };
+    }
     const courseId = localStorage.getItem('slc_current_course_id');
-    if (!courseId || !window.slcDB) return;
-    const { data: { user } } = await window.slcDB.auth.getUser();
-    if (!user) return;
-    const { error } = await window.slcDB
-      .from('slc_summaries')
-      .upsert(
-        { course_id: courseId, owner_id: user.id, summary_html: html, updated_at: new Date().toISOString() },
-        { onConflict: 'course_id' }
-      );
-    if (error) console.error('تعذر حفظ الخلاصة:', error);
+    if (!courseId) return null;
+    const { data } = await window.slcDB.from('slc_courses')
+      .select('id,title,provider_name,course_url').eq('id', courseId).maybeSingle();
+    return data ? { kind: 'course', ...data } : null;
   }
 
-  // ------------------------------------------------------------
-  // تحميل بيانات الكورس الحقيقي المحدَّد من مكتبة الكورسات
-  // ------------------------------------------------------------
   async function loadWorkspace() {
-    const courseId = localStorage.getItem('slc_current_course_id');
-    const titleEl = $('workspaceTitle');
-    const metaEl = $('workspaceMeta');
-    const frame = $('lessonFrame');
-    const outsideBtn = $('watchOutsideBtn');
-    if (!titleEl || !window.slcDB) return;
-
-    if (!courseId) {
-      titleEl.textContent = 'لم يُحدَّد أي كورس بعد';
-      metaEl.textContent = 'اذهب إلى «مكتبة الكورسات» واضغط «فتح» على أي كورس.';
+    const title = $('workspaceTitle');
+    const meta = $('workspaceMeta');
+    if (!title || !window.slcDB) return;
+    title.textContent = 'جاري تحميل المحاضرة...';
+    const record = await getCurrentRecord();
+    if (!record) {
+      title.textContent = 'لم تُحدَّد محاضرة بعد';
+      meta.textContent = 'اذهب إلى «بوابة المحاضرات» واختر المحاضرة المطلوبة.';
       return;
     }
 
-    titleEl.textContent = 'جاري التحميل...';
-    const { data: course, error } = await window.slcDB
-      .from('slc_courses')
-      .select('id,title,provider_name,course_url')
-      .eq('id', courseId)
-      .single();
+    const isLecture = record.kind === 'lecture';
+    const url = isLecture ? record.source_url : record.course_url;
+    const provider = isLecture ? record.slc_courses?.provider_name : record.provider_name;
+    title.textContent = record.title || 'بدون عنوان';
+    meta.textContent = [provider, record.module_name, record.duration_minutes ? `${record.duration_minutes} دقيقة` : null]
+      .filter(Boolean).join(' · ') || url || 'مصدر محفوظ';
+    setPlayer(url, isLecture ? record.source_type : (extractYouTubeId(url) ? 'youtube' : 'external'), record.open_mode || 'auto');
+    $('lastPoint').textContent = formatSeconds(record.last_position_seconds || 0);
 
-    if (error || !course) {
-      titleEl.textContent = 'تعذر تحميل بيانات الكورس';
-      metaEl.textContent = error ? error.message : 'الكورس غير موجود.';
-      return;
+    const summaryQuery = window.slcDB.from('slc_summaries').select('summary_html');
+    const { data: summary } = isLecture
+      ? await summaryQuery.eq('lecture_id', record.id).maybeSingle()
+      : await summaryQuery.eq('course_id', record.id).is('lecture_id', null).maybeSingle();
+    if (summary?.summary_html) renderSummary(summary.summary_html);
+    else {
+      $('summaryPlaceholder')?.classList.remove('hidden');
+      $('summaryResult')?.classList.add('hidden');
     }
-
-    titleEl.textContent = course.title || 'بدون عنوان';
-    metaEl.textContent = `${course.provider_name || 'مصدر غير محدد'} · ${course.course_url || ''}`;
-
-    const videoId = extractYouTubeId(course.course_url);
-    if (videoId && frame) {
-      frame.src = `https://www.youtube.com/embed/${videoId}?rel=0`;
-    }
-    if (outsideBtn && course.course_url) {
-      outsideBtn.href = course.course_url;
-    }
-
-    // إعادة ضبط منطقة التلخيص عند تبديل الكورس
-    const placeholder = $('summaryPlaceholder');
-    const result = $('summaryResult');
-    const transcriptInput = $('transcriptInput');
-    if (transcriptInput) transcriptInput.value = '';
-
-    // هل توجد خلاصة محفوظة مسبقاً لهذا الكورس؟ اعرضها فوراً بدل تلخيص جديد
-    const { data: savedSummary } = await window.slcDB
-      .from('slc_summaries')
-      .select('summary_html, updated_at')
-      .eq('course_id', courseId)
-      .maybeSingle();
-
-    if (savedSummary?.summary_html) {
-      renderSummary(savedSummary.summary_html, true);
-    } else if (placeholder && result) {
-      placeholder.classList.remove('hidden');
-      result.classList.add('hidden');
-      result.innerHTML = '';
-    }
+    if ($('lessonNotes')) $('lessonNotes').value = record.notes || '';
   }
 
-  // ------------------------------------------------------------
-  // مفتاح Claude API الخاص بالمستخدم (يُطلب مرة واحدة فقط ويُحفظ محلياً)
-  // ------------------------------------------------------------
-  function getApiKey() {
-    let key = localStorage.getItem(KEY_STORAGE);
-    if (!key) {
-      key = prompt(
-        'أدخل مفتاح Claude API الخاص بك (يبدأ بـ sk-ant-...).\nيُحفظ في متصفحك فقط ولا يُرسل لأي مكان آخر غير Anthropic مباشرة.'
-      );
-      if (key) localStorage.setItem(KEY_STORAGE, key.trim());
-    }
-    return key ? key.trim() : null;
+  function formatSeconds(value) {
+    const total = Number(value || 0);
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+    return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}` : `${minutes}:${String(seconds).padStart(2, '0')}`;
   }
 
-  const SUMMARY_PROMPT = `أنت مساعد متخصص في تلخيص المحاضرات التعليمية باللغة العربية.
-لخّص نص المحاضرة التالي بصيغة HTML بسيطة (استخدم <h4> و<ul><li> فقط، بدون أي وسوم أخرى)، على هذا الترتيب بالضبط:
+  function buildSummaryPrompt(transcript) {
+    return `لخّص نص المحاضرة التالية باللغة العربية، ونظّم النتيجة تحت العناوين الآتية:\n\n1. الخلاصة السريعة: من 5 إلى 8 نقاط.\n2. الأفكار والمفاهيم الأساسية.\n3. ما الذي أستفيد منه عملياً؟\n4. الخطوات أو التطبيقات المذكورة.\n5. الأخطاء أو التحذيرات.\n6. أسئلة للمراجعة لاحقاً.\n\nحافظ على دقة كلام المحاضر، ولا تضف معلومات غير موجودة في النص.\n\nنص المحاضرة:\n${transcript}`;
+  }
 
-<h4>الخلاصة السريعة</h4>
-<ul> من 5 إلى 8 نقاط رئيسية </ul>
-
-<h4>ماذا أستفيد عملياً</h4>
-<ul> خطوات أو أفكار قابلة للتطبيق مباشرة </ul>
-
-<h4>أخطاء أو تحذيرات ذكرها المحاضر</h4>
-<ul> إن وُجدت، وإلا اكتب "لم يُذكر شيء" </ul>
-
-النص:
-"""
-{{TRANSCRIPT}}
-"""
-
-أعد HTML فقط بدون أي شرح أو مقدمة.`;
-
-  async function summarizeNow() {
-    const transcriptInput = $('transcriptInput');
-    const text = transcriptInput?.value.trim();
-    if (!text || text.length < 50) {
-      toast('الصق نص المحاضرة كاملاً أولاً (أقل من 50 حرفاً غير كافٍ).');
-      return;
-    }
-
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      toast('تحتاج مفتاح Claude API للمتابعة.');
-      return;
-    }
-
-    const btn = $('summarizeBtn');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '⏳ جاري التلخيص...';
-
+  async function prepareForChatGPT() {
+    const transcript = $('transcriptInput')?.value.trim();
+    if (!transcript || transcript.length < 50) return toast('الصق نص المحاضرة أولاً.');
+    const chatWindow = window.open('https://chatgpt.com/', '_blank', 'noopener');
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: CLAUDE_MODEL,
-          max_tokens: 1500,
-          messages: [{
-            role: 'user',
-            content: SUMMARY_PROMPT.replace('{{TRANSCRIPT}}', text.slice(0, 20000))
-          }]
-        })
-      });
-
-      if (!response.ok) {
-        const errBody = await response.json().catch(() => ({}));
-        throw new Error(errBody?.error?.message || `خطأ HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const html = data?.content?.[0]?.text || '<p>لم يصل رد صالح من النموذج.</p>';
-
-      renderSummary(html, false);
-      await saveSummaryToDatabase(html);
-      toast('تم التلخيص وحفظه بنجاح');
-    } catch (error) {
-      console.error(error);
-      toast(`تعذر التلخيص: ${error.message}`);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = originalText;
+      await navigator.clipboard.writeText(buildSummaryPrompt(transcript));
+      toast('تم نسخ النص والطلب. الصقه في ChatGPT، ثم أعد الخلاصة لحفظها هنا.');
+    } catch (_error) {
+      toast('تعذر النسخ التلقائي. حدّد النص وانسخه يدويًا.');
     }
+    if (!chatWindow) toast('اسمح بفتح النوافذ المنبثقة لفتح ChatGPT.');
   }
 
-  document.querySelector('[data-view="workspace"]')?.addEventListener('click', loadWorkspace);
-  $('summarizeBtn')?.addEventListener('click', summarizeNow);
-
-  // لو فُتحت الصفحة مباشرة على مساحة المحاضرة (رابط بهاش #workspace)
-  if (location.hash === '#workspace') {
-    window.addEventListener('load', loadWorkspace);
-  }
-
-  // ------------------------------------------------------------
-  // البحث الحقيقي: عناوين الكورسات + نصوص الخلاصات المحفوظة معاً
-  // ------------------------------------------------------------
-  function excerptAround(text, query) {
-    const plain = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    const index = plain.toLowerCase().indexOf(query.toLowerCase());
-    if (index === -1) return plain.slice(0, 90);
-    const start = Math.max(0, index - 30);
-    return (start > 0 ? '…' : '') + plain.slice(start, start + 110) + '…';
-  }
-
-  function openCourseFromSearch(courseId) {
-    localStorage.setItem('slc_current_course_id', courseId);
-    $('searchResults')?.classList.add('hidden');
-    if ($('globalSearch')) $('globalSearch').value = '';
-    document.querySelector('[data-view="workspace"]')?.click();
+  async function saveSummary() {
+    const text = $('summaryPasteInput')?.value.trim();
+    if (!text) return toast('ألصق الخلاصة النهائية أولاً.');
+    const record = await getCurrentRecord();
+    const { data: { user } } = await window.slcDB.auth.getUser();
+    if (!record || !user) return toast('سجّل الدخول واختر محاضرة أولاً.');
+    const payload = {
+      owner_id: user.id,
+      course_id: record.kind === 'lecture' ? record.course_id : record.id,
+      lecture_id: record.kind === 'lecture' ? record.id : null,
+      summary_key: record.kind === 'lecture' ? `lecture:${record.id}` : `course:${record.id}`,
+      summary_html: text,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await window.slcDB.from('slc_summaries').upsert(payload, { onConflict: 'summary_key' });
+    if (error) return toast(`تعذر حفظ الخلاصة: ${error.message}`);
+    renderSummary(text);
+    toast('تم حفظ الخلاصة داخل المحاضرة');
   }
 
   async function runGlobalSearch(query) {
     const box = $('searchResults');
     if (!box || !window.slcDB) return;
-    if (query.trim().length < 2) {
-      box.classList.add('hidden');
-      return;
-    }
-
-    const [{ data: courses }, { data: summaries }] = await Promise.all([
-      window.slcDB.from('slc_courses').select('id,title,provider_name').ilike('title', `%${query}%`).limit(6),
-      window.slcDB.from('slc_summaries').select('course_id,summary_html').ilike('summary_html', `%${query}%`).limit(6)
+    const term = query.trim();
+    if (term.length < 2) return box.classList.add('hidden');
+    const pattern = `%${term}%`;
+    const [coursesResult, lecturesResult, summariesResult] = await Promise.all([
+      window.slcDB.from('slc_courses').select('id,title,provider_name').or(`title.ilike.${pattern},provider_name.ilike.${pattern}`).limit(6),
+      window.slcDB.from('slc_lectures').select('id,course_id,title,module_name,notes,slc_courses(title,provider_name)').or(`title.ilike.${pattern},module_name.ilike.${pattern},notes.ilike.${pattern}`).limit(8),
+      window.slcDB.from('slc_summaries').select('lecture_id,course_id,summary_html').ilike('summary_html', pattern).limit(6)
     ]);
-
-    const courseIds = new Set((courses || []).map((c) => c.id));
-    const extraIds = (summaries || []).map((s) => s.course_id).filter((id) => !courseIds.has(id));
-
-    let extraCourses = [];
-    if (extraIds.length) {
-      const { data } = await window.slcDB.from('slc_courses').select('id,title,provider_name').in('id', extraIds);
-      extraCourses = data || [];
-    }
-
-    const results = [
-      ...(courses || []).map((course) => ({
-        id: course.id,
-        title: course.title,
-        snippet: course.provider_name || 'عنوان مطابق',
-        icon: '🎓'
-      })),
-      ...extraCourses.map((course) => {
-        const match = (summaries || []).find((s) => s.course_id === course.id);
-        return {
-          id: course.id,
-          title: course.title,
-          snippet: match ? excerptAround(match.summary_html, query) : '',
-          icon: '📝'
-        };
-      })
-    ];
-
-    if (!results.length) {
-      box.innerHTML = '<div class="search-empty">لا نتائج مطابقة</div>';
-      box.classList.remove('hidden');
-      return;
-    }
-
-    box.innerHTML = results
-      .map((r) => `<button class="search-result-item" data-course-id="${r.id}"><h4>${r.icon} ${r.title}</h4><p>${r.snippet}</p></button>`)
-      .join('');
-    box.querySelectorAll('.search-result-item').forEach((btn) => {
-      btn.addEventListener('click', () => openCourseFromSearch(btn.dataset.courseId));
-    });
+    const items = [];
+    (coursesResult.data || []).forEach((course) => items.push({ type: 'course', id: course.id, title: course.title, meta: course.provider_name || 'كورس', icon: '🎓' }));
+    (lecturesResult.data || []).forEach((lecture) => items.push({ type: 'lecture', id: lecture.id, courseId: lecture.course_id, title: lecture.title, meta: `${lecture.slc_courses?.provider_name || 'محاضرة'} · ${lecture.module_name || lecture.slc_courses?.title || ''}`, icon: '▶' }));
+    (summariesResult.data || []).forEach((summary) => items.push({ type: summary.lecture_id ? 'lecture' : 'course', id: summary.lecture_id || summary.course_id, courseId: summary.course_id, title: 'نتيجة من داخل خلاصة محفوظة', meta: summary.summary_html.slice(0, 110), icon: '📝' }));
+    const unique = [...new Map(items.map((item) => [`${item.type}-${item.id}`, item])).values()].slice(0, 12);
+    box.innerHTML = unique.length ? unique.map((item) => `<button class="search-result-item" data-result-type="${item.type}" data-result-id="${item.id}" data-course-id="${item.courseId || item.id}"><h4>${item.icon} ${escapeHtml(item.title)}</h4><p>${escapeHtml(item.meta)}</p></button>`).join('') : '<div class="search-empty">لا نتائج مطابقة داخل محاضراتك</div>';
     box.classList.remove('hidden');
+    box.querySelectorAll('.search-result-item').forEach((button) => button.addEventListener('click', () => {
+      localStorage.setItem('slc_current_course_id', button.dataset.courseId);
+      if (button.dataset.resultType === 'lecture') localStorage.setItem('slc_current_lecture_id', button.dataset.resultId);
+      else localStorage.removeItem('slc_current_lecture_id');
+      box.classList.add('hidden');
+      document.querySelector('[data-view="workspace"]')?.click();
+    }));
   }
 
-  let searchDebounce;
-  const searchInput = document.getElementById('globalSearch');
-  searchInput?.addEventListener('input', (e) => {
-    clearTimeout(searchDebounce);
-    searchDebounce = setTimeout(() => runGlobalSearch(e.target.value), 350);
+  document.querySelector('[data-view="workspace"]')?.addEventListener('click', loadWorkspace);
+  $('prepareSummaryBtn')?.addEventListener('click', prepareForChatGPT);
+  $('saveSummaryBtn')?.addEventListener('click', saveSummary);
+  let debounce;
+  $('globalSearch')?.addEventListener('input', (event) => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => runGlobalSearch(event.target.value), 320);
   });
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-wrap')) $('searchResults')?.classList.add('hidden');
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.search-wrap')) $('searchResults')?.classList.add('hidden');
   });
+  if (location.hash === '#workspace') window.addEventListener('load', loadWorkspace);
 })();
-

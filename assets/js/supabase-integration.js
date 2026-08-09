@@ -17,7 +17,7 @@
   const $ = (selector) => document.querySelector(selector);
   let currentUser = null;
   let selectedSourceType = 'youtube';
-  let authMode = 'signin';
+  const authMode = 'signin'; // المنصة شخصية: لا يوجد إنشاء حسابات من الواجهة
 
   const modalOpen = (el) => {
     if (!el) return;
@@ -42,7 +42,7 @@
 
   function displayNameOf(user) {
     if (!user) return null;
-    return user.user_metadata?.full_name || user.email?.split('@')[0] || null;
+    return 'عبدالرحمن';
   }
 
   function updateAuthUI() {
@@ -201,47 +201,24 @@
     await loadInbox();
   }
 
-  function setAuthMode(mode) {
-    authMode = mode;
-    const signUp = mode === 'signup';
-    $('#authTitle').textContent = signUp ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
-    $('#authSubmitBtn').textContent = signUp ? 'إنشاء الحساب' : 'تسجيل الدخول';
-    $('#authToggleBtn').textContent = signUp ? 'لدي حساب — تسجيل الدخول' : 'ليس لدي حساب — إنشاء حساب جديد';
-    $('#authMessage').textContent = '';
-    $('#authNameField')?.classList.toggle('hidden', !signUp);
-  }
-
   async function submitAuth() {
     const email = $('#authEmailInput')?.value.trim();
     const password = $('#authPasswordInput')?.value || '';
-    const fullName = $('#authNameInput')?.value.trim() || '';
     const message = $('#authMessage');
     if (!email || password.length < 6) {
       message.className = 'auth-message error';
       message.textContent = 'أدخل بريدًا صحيحًا وكلمة مرور من 6 أحرف على الأقل.';
       return;
     }
-    if (authMode === 'signup' && !fullName) {
-      message.className = 'auth-message error';
-      message.textContent = 'أدخل الاسم الذي تريد أن يظهر لك في المنصة.';
-      return;
-    }
     const button = $('#authSubmitBtn');
     button.disabled = true;
     button.textContent = 'يرجى الانتظار...';
-    const result = authMode === 'signup'
-      ? await db.auth.signUp({ email, password, options: { data: { full_name: fullName } } })
-      : await db.auth.signInWithPassword({ email, password });
+    const result = await db.auth.signInWithPassword({ email, password });
     button.disabled = false;
-    setAuthMode(authMode);
+    button.textContent = 'تسجيل الدخول';
     if (result.error) {
       message.className = 'auth-message error';
       message.textContent = result.error.message;
-      return;
-    }
-    if (authMode === 'signup' && !result.data.session) {
-      message.className = 'auth-message success';
-      message.textContent = 'تم إنشاء الحساب. افحص بريدك لتأكيده ثم سجّل الدخول.';
       return;
     }
     modalClose($('#authModal'));
@@ -258,7 +235,6 @@
     }
   });
   $('#closeAuthModal')?.addEventListener('click', () => modalClose($('#authModal')));
-  $('#authToggleBtn')?.addEventListener('click', () => setAuthMode(authMode === 'signin' ? 'signup' : 'signin'));
   $('#authSubmitBtn')?.addEventListener('click', submitAuth);
   $('#authPasswordInput')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') submitAuth(); });
 

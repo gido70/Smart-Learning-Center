@@ -70,7 +70,7 @@
         <div class="hero">
           <div>
             <span class="eyebrow">الخميس، 6 أغسطس 2026</span>
-            <h2 id="dashboardGreeting">صباح الخير، ضيفنا</h2>
+            <h2 id="dashboardGreeting">مرحبًا، عبدالرحمن</h2>
             <p>لديك اليوم محاضرة مباشرة، و4 عناصر للمراجعة، و3 روابط تنتظر المعالجة.</p>
           </div>
           <div class="hero-actions">
@@ -325,9 +325,12 @@
               <div class="workspace-tabs"><button class="active" data-tab="summary">الخلاصة</button><button data-tab="notes">ملاحظاتي</button><button data-tab="chat">اسأل</button></div>
               <div class="workspace-tab active" id="summaryTab">
                 <div id="summaryPlaceholder">
-                  <p class="muted-note">الصق نص المحاضرة (Transcript) من يوتيوب في الخانة أدناه، ثم اضغط "لخّص الآن" للحصول على خلاصة حقيقية.</p>
+                  <p class="muted-note">الصق نص المحاضرة، ثم جهّزه للتلخيص في ChatGPT باستخدام اشتراكك الحالي. لا تحتاج إلى أي مفتاح API.</p>
                   <textarea id="transcriptInput" class="studio-textarea" style="min-height:140px" placeholder="افتح الفيديو على يوتيوب → اضغط ⋯ أسفل الفيديو → Show transcript → انسخ النص كاملاً والصقه هنا..."></textarea>
-                  <button class="btn primary wide" id="summarizeBtn" style="margin-top:10px">✨ لخّص الآن</button>
+                  <button class="btn primary wide" id="prepareSummaryBtn" style="margin-top:10px">✨ جهّز وافتح ChatGPT</button>
+                  <label class="field-label" for="summaryPasteInput" style="margin-top:14px">ألصق الخلاصة النهائية هنا لحفظها</label>
+                  <textarea id="summaryPasteInput" class="studio-textarea" style="min-height:120px" placeholder="بعد التلخيص في ChatGPT، الصق النتيجة هنا..."></textarea>
+                  <button class="btn soft wide" id="saveSummaryBtn">حفظ الخلاصة داخل المحاضرة</button>
                 </div>
                 <div id="summaryResult" class="hidden"></div>
               </div>
@@ -339,7 +342,7 @@
         </div>
       </section>
 
-      <section class="view" id="replay"><div class="page-head"><div><span class="eyebrow">Replay Center</span><h2>المحاضرات المسجلة</h2><p>حلّل المحاضرات القديمة، استخرج الفصول، واذهب مباشرة إلى الأجزاء المهمة.</p></div><button class="btn primary">＋ إضافة محاضرة</button></div><div class="cards-grid" id="replayCards"></div></section>
+      <section class="view" id="replay"><div class="page-head"><div><span class="eyebrow">Personal Lecture Portal</span><h2>بوابة المحاضرات</h2><p>كل محاضراتك من YouTube والمنصات الجامعية والمدفوعة والملفات الخاصة في مكان واحد.</p></div><button class="btn primary" id="addLectureBtn">＋ إضافة محاضرة</button></div><div class="platform-strip" id="lecturePlatformFilters"><button class="active" data-platform-filter="all">كل المنصات</button></div><div class="cards-grid" id="replayCards"></div></section>
       <section class="view" id="courses"><div class="page-head"><div><span class="eyebrow">Course Library</span><h2>مكتبة الكورسات</h2><p>جميع دوراتك من YouTube والمنصات المدفوعة والملفات الخاصة في مكان واحد.</p></div><button class="btn primary" id="addCourseBtn">＋ إضافة كورس</button></div><div class="filter-row"><button class="active">الكل</button><button>قيد التعلّم</button><button>تحتاج مراجعة</button><button>مكتملة</button><input placeholder="بحث داخل الكورسات"/></div><div class="cards-grid" id="courseCards"></div></section>
       <section class="view" id="inbox"><div class="page-head"><div><span class="eyebrow">Knowledge Inbox</span><h2>صندوق المعرفة</h2><p>ألصق أي رابط الآن، واتخذ قرار المعالجة لاحقاً دون أن تضيع الفكرة.</p></div><button class="btn primary" id="openAddModal">＋ إضافة مصدر</button></div><div class="inbox-board" id="inboxBoard"></div></section>
       <section class="view" id="micro"><div class="page-head"><div><span class="eyebrow">Micro Learning Center</span><h2>التعلّم السريع</h2><p>حوّل Shorts وReels وTikTok وX إلى كبسولات معرفة قابلة للبحث والتجميع.</p></div><button class="btn primary">＋ إضافة رابط قصير</button></div><div class="platform-strip"><span>YouTube Shorts</span><span>Instagram Reels</span><span>Facebook Reels</span><span>TikTok</span><span>X</span></div><div class="micro-grid" id="microCards"></div></section>
@@ -349,7 +352,7 @@
       <section class="view" id="factory"><div class="page-head"><div><span class="eyebrow">Knowledge Factory</span><h2>مصنع المحتوى</h2><p>حوّل معرفتك الناضجة إلى محتوى أصلي يفيد الآخرين.</p></div></div><div class="factory-grid"><button class="factory-card"><span>📝</span><b>مقال تعليمي</b><small>من ملخص أو عدة مصادر</small></button><button class="factory-card"><span>🎬</span><b>سيناريو فيديو</b><small>Short أو فيديو طويل</small></button><button class="factory-card"><span>🎧</span><b>نص بودكاست</b><small>حوار أو حلقة فردية</small></button><button class="factory-card"><span>▤</span><b>دليل عملي</b><small>خطوات وأمثلة وأكواد</small></button><button class="factory-card"><span>❓</span><b>اختبار</b><small>أسئلة وتقييم فوري</small></button><button class="factory-card"><span>📱</span><b>منشورات اجتماعية</b><small>LinkedIn وX وInstagram</small></button></div><article class="panel maturity-panel"><h3>نضج المعرفة قبل النشر</h3><div class="maturity-flow"><span class="done">جُمعت</span><span class="done">فُهمت</span><span class="done">رُوجعت</span><span class="active">طُبقت</span><span>جاهزة للتعليم</span><span>مرجع منشور</span></div></article></section>
       <section class="view" id="chat"><div class="page-head"><div><span class="eyebrow">Ask Your Knowledge</span><h2>اسأل كل ما تعلمته</h2><p>إجابات مبنية على مكتبتك الشخصية مع الإشارة إلى المصدر والتوقيت.</p></div></div><div class="chat-layout"><aside class="panel chat-history"><button class="btn soft">＋ محادثة جديدة</button><h4>محادثات حديثة</h4><button>كيف أحمي صفحة الأدمن؟</button><button>قارن دورات Supabase</button><button>ملخص n8n لهذا الشهر</button></aside><article class="panel chat-main"><div class="chat-welcome"><span>✦</span><h3>ماذا تريد أن تعرف من مكتبتك؟</h3><div class="suggestions"><button>أرني كل ما تعلمته عن RLS</button><button>ما الأفكار التي لم أطبقها بعد؟</button><button>أنشئ مساراً لتعلم n8n</button></div></div><div class="chat-input"><input placeholder="اكتب سؤالك..."/><button>إرسال</button></div></article></div></section>
       <section class="view" id="analytics"><div class="page-head"><div><span class="eyebrow">Learning Analytics</span><h2>تحليلات التعلّم</h2><p>قِس ما طبّقته وتذكرته، لا عدد الساعات التي شاهدتها فقط.</p></div></div><div class="stats-grid"><article class="stat-card"><span class="stat-icon teal">↗</span><div><b>74%</b><small>معدل الاستفادة</small></div></article><article class="stat-card"><span class="stat-icon blue">✓</span><div><b>23</b><small>أفكار مطبقة</small></div></article><article class="stat-card"><span class="stat-icon amber">↻</span><div><b>81%</b><small>ثبات المعرفة</small></div></article><article class="stat-card"><span class="stat-icon violet">⏱</span><div><b>46 ساعة</b><small>وقت تم توفيره</small></div></article></div><div class="analytics-grid"><article class="panel"><h3>التعلّم حسب المجال</h3><div class="bars"><div><span>Supabase</span><b style="width:83%"></b><em>83%</em></div><div><span>n8n</span><b style="width:68%"></b><em>68%</em></div><div><span>GitHub</span><b style="width:55%"></b><em>55%</em></div><div><span>الذكاء الاصطناعي</span><b style="width:72%"></b><em>72%</em></div></div></article><article class="panel"><h3>من المشاهدة إلى التطبيق</h3><div class="funnel"><span style="width:100%">128 مصدر</span><span style="width:82%">105 ملخص</span><span style="width:61%">78 مراجعة</span><span style="width:36%">46 مهمة</span><span style="width:18%">23 تطبيق</span></div></article></div></section>
-      <section class="view" id="settings"><div class="page-head"><div><span class="eyebrow">Settings</span><h2>الإعدادات</h2><p>خصص اللغة، مصادر الذكاء الاصطناعي، الخصوصية وحدود الاستخدام.</p></div></div><div class="settings-grid"><article class="panel"><h3>التفضيلات العامة</h3><label class="setting"><span>لغة الواجهة</span><select><option>العربية</option><option>English</option></select></label><label class="setting"><span>النمط</span><select><option>فاتح</option><option>داكن</option><option>حسب النظام</option></select></label><label class="setting"><span>المنطقة الزمنية</span><select><option>Europe/Istanbul</option></select></label></article><article class="panel"><h3>الذكاء الاصطناعي</h3><label class="setting"><span>مزود التلخيص</span><select><option>Claude</option><option>OpenAI</option><option>Gemini</option></select></label><label class="setting"><span>استخدم مفتاحي الخاص</span><input type="checkbox" checked></label><label class="setting"><span>حفظ إصدارات الملخص</span><input type="checkbox" checked></label></article><article class="panel"><h3>الخصوصية</h3><label class="setting"><span>معالجة محلية عند الإمكان</span><input type="checkbox" checked></label><label class="setting"><span>حذف الملفات الأصلية بعد التفريغ</span><input type="checkbox"></label><label class="setting"><span>تشفير الملاحظات الخاصة</span><input type="checkbox" checked></label></article></div></section>
+      <section class="view" id="settings"><div class="page-head"><div><span class="eyebrow">Settings</span><h2>الإعدادات الشخصية</h2><p>هذه منصة عبدالرحمن الشخصية لتنظيم التعلّم والمعرفة.</p></div></div><div class="settings-grid"><article class="panel"><h3>الهوية</h3><label class="setting"><span>صاحب المنصة</span><strong>عبدالرحمن</strong></label><label class="setting"><span>وضع الاستخدام</span><strong>شخصي خاص</strong></label><label class="setting"><span>المنطقة الزمنية</span><select><option>Europe/Istanbul</option></select></label></article><article class="panel"><h3>التلخيص</h3><label class="setting"><span>طريقة العمل</span><strong>عبر اشتراك ChatGPT</strong></label><label class="setting"><span>مفاتيح API</span><strong>غير مطلوبة</strong></label><label class="setting"><span>حفظ الخلاصة</span><input type="checkbox" checked></label></article><article class="panel"><h3>الخصوصية</h3><label class="setting"><span>الدخول</span><strong>الحساب الحالي فقط</strong></label><label class="setting"><span>كلمات مرور المنصات الخارجية</span><strong>لا تُحفظ</strong></label><label class="setting"><span>حماية البيانات بسياسات RLS</span><input type="checkbox" checked disabled></label></article></div></section>
     </main>
   </div>
 
@@ -357,7 +360,35 @@
 
   <div class="modal" id="courseModal" aria-hidden="true"><div class="modal-card"><button class="modal-close" id="closeCourseModal">×</button><span class="eyebrow">Course Library</span><h2>إضافة كورس جديد</h2><label class="field-label">اسم الكورس *</label><input class="wide-input" id="courseTitleInput" placeholder="مثال: Supabase من الصفر إلى الاحتراف"/><label class="field-label">المنصة أو الجهة</label><input class="wide-input" id="courseProviderInput" placeholder="YouTube، Udemy، منصة خاصة..."/><label class="field-label">رابط الكورس</label><input class="wide-input" id="courseUrlInput" placeholder="https://..."/><label class="field-label">المدرب</label><input class="wide-input" id="courseInstructorInput" placeholder="اسم المدرب"/><div class="form-row"><label><span>الحالة</span><select id="courseStatusInput"><option value="planned">مخطط</option><option value="active" selected>قيد التعلّم</option><option value="paused">متوقف مؤقتًا</option><option value="completed">مكتمل</option></select></label><label><span>الأولوية</span><select id="coursePriorityInput"><option value="5">عالية جدًا</option><option value="4">عالية</option><option value="3" selected>متوسطة</option><option value="2">منخفضة</option><option value="1">لاحقًا</option></select></label></div><button class="btn primary wide" id="saveCourseBtn">حفظ الكورس</button></div></div>
 
-  <div class="modal" id="authModal" aria-hidden="true"><div class="modal-card auth-card"><button class="modal-close" id="closeAuthModal">×</button><span class="eyebrow">حساب Smart Learning Center</span><h2 id="authTitle">تسجيل الدخول</h2><p class="auth-note">بياناتك الخاصة محمية بسياسات RLS، ولا يمكن لأي مستخدم رؤية بيانات مستخدم آخر.</p><div id="authNameField" class="hidden"><label class="field-label">الاسم الذي سيظهر لك في المنصة</label><input class="wide-input" id="authNameInput" type="text" placeholder="مثال: عبدالرحمن"/></div><label class="field-label">البريد الإلكتروني</label><input class="wide-input" id="authEmailInput" type="email" autocomplete="email" placeholder="name@example.com"/><label class="field-label">كلمة المرور</label><input class="wide-input" id="authPasswordInput" type="password" autocomplete="current-password" placeholder="8 أحرف على الأقل"/><button class="btn primary wide" id="authSubmitBtn">تسجيل الدخول</button><button class="text-btn auth-toggle" id="authToggleBtn">ليس لدي حساب — إنشاء حساب جديد</button><div class="auth-message" id="authMessage"></div></div></div>
+  <div class="modal" id="lectureModal" aria-hidden="true">
+    <div class="modal-card lecture-modal-card">
+      <button class="modal-close" id="closeLectureModal">×</button>
+      <span class="eyebrow">Personal Lecture Portal</span>
+      <h2>إضافة محاضرة</h2>
+      <div class="form-row">
+        <label><span>الكورس *</span><select id="lectureCourseInput"><option value="">اختر الكورس</option></select></label>
+        <label><span>نوع المصدر</span><select id="lectureSourceTypeInput"><option value="youtube">YouTube</option><option value="external">منصة خارجية أو جامعية</option><option value="video">رابط فيديو مباشر</option><option value="audio">رابط صوت</option><option value="pdf">PDF</option></select></label>
+      </div>
+      <label class="field-label" for="lectureTitleInput">عنوان المحاضرة *</label>
+      <input class="wide-input" id="lectureTitleInput" placeholder="مثال: المحاضرة الخامسة — بناء الوكلاء الذكية">
+      <label class="field-label" for="lectureUrlInput">رابط المحاضرة أو صفحة الدورة *</label>
+      <input class="wide-input" id="lectureUrlInput" placeholder="https://...">
+      <div class="form-row">
+        <label><span>الوحدة أو القسم</span><input class="wide-input" id="lectureModuleInput" placeholder="الوحدة الثالثة"></label>
+        <label><span>رقم المحاضرة</span><input class="wide-input" id="lectureOrderInput" type="number" min="1" placeholder="5"></label>
+      </div>
+      <div class="form-row">
+        <label><span>المدة بالدقائق</span><input class="wide-input" id="lectureDurationInput" type="number" min="0" placeholder="60"></label>
+        <label><span>طريقة الفتح</span><select id="lectureOpenModeInput"><option value="auto">تلقائي — جرّب داخل المنصة</option><option value="internal">داخل المنصة</option><option value="external">في المصدر الأصلي</option></select></label>
+      </div>
+      <label class="field-label" for="lectureNotesInput">ملاحظة تعريفية</label>
+      <textarea id="lectureNotesInput" class="studio-textarea" placeholder="ما الذي تريد تعلمه أو تذكره من هذه المحاضرة؟"></textarea>
+      <button class="btn primary wide" id="saveLectureBtn">حفظ المحاضرة</button>
+      <p class="auth-note">لا تحفظ المنصة اسم المستخدم أو كلمة المرور. ستستخدم جلسة دخول Chrome المحفوظة عند فتح المصدر الأصلي.</p>
+    </div>
+  </div>
+
+  <div class="modal" id="authModal" aria-hidden="true"><div class="modal-card auth-card"><button class="modal-close" id="closeAuthModal">×</button><span class="eyebrow">مركز التعلّم الشخصي</span><h2 id="authTitle">تسجيل دخول عبدالرحمن</h2><p class="auth-note">هذه منصة شخصية خاصة. استخدم حسابك الحالي للدخول إلى محاضراتك وبياناتك.</p><label class="field-label">البريد الإلكتروني</label><input class="wide-input" id="authEmailInput" type="email" autocomplete="email" placeholder="بريدك المسجل"/><label class="field-label">كلمة المرور</label><input class="wide-input" id="authPasswordInput" type="password" autocomplete="current-password" placeholder="كلمة المرور"/><button class="btn primary wide" id="authSubmitBtn">تسجيل الدخول</button><div class="auth-message" id="authMessage"></div></div></div>
 
   <div class="modal" id="finishLiveModal" aria-hidden="true">
     <div class="modal-card">
@@ -382,10 +413,11 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.0.5"></script>
-  <script src="assets/js/supabase-integration.js?v=3.0.5"></script>
-  <script src="assets/js/live-studio.js?v=3.0.5"></script>
-  <script src="assets/js/workspace.js?v=3.0.5"></script>
+  <script src="assets/js/app.js?v=3.1.0"></script>
+  <script src="assets/js/supabase-integration.js?v=3.1.0"></script>
+  <script src="assets/js/live-studio.js?v=3.1.0"></script>
+  <script src="assets/js/workspace.js?v=3.1.0"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.1.0"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>
