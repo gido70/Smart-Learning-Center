@@ -1,7 +1,6 @@
 /**
  * workspace.js — مساحة عمل المحاضرة الشخصية
- * يدعم YouTube والمصادر الخارجية والملفات المباشرة، ويستخدم اشتراك ChatGPT
- * يدوياً دون أي مفتاح API أو اتصال بمزود ذكاء من داخل الموقع.
+ * يدعم YouTube والمصادر الخارجية والملفات المباشرة، ويحفظ الخلاصة المحلية.
  */
 (() => {
   'use strict';
@@ -67,7 +66,7 @@
     edit.className = 'btn soft wide';
     edit.textContent = 'تعديل أو استبدال الخلاصة';
     edit.addEventListener('click', () => {
-      $('summaryPasteInput').value = text;
+      if ($('transcriptInput')) $('transcriptInput').focus();
       placeholder.classList.remove('hidden');
       result.classList.add('hidden');
     });
@@ -81,7 +80,7 @@
     const lectureId = localStorage.getItem('slc_current_lecture_id');
     if (lectureId) {
       const { data } = await window.slcDB.from('slc_lectures')
-        .select('id,course_id,title,source_url,source_type,open_mode,module_name,lecture_order,duration_minutes,status,notes,last_position_seconds,slc_courses(title,provider_name)')
+        .select('id,course_id,title,source_url,source_type,open_mode,module_name,lecture_order,duration_minutes,status,notes,transcript_text,last_position_seconds,slc_courses(title,provider_name)')
         .eq('id', lectureId).maybeSingle();
       if (data) return { kind: 'lecture', ...data };
     }
@@ -123,6 +122,7 @@
       $('summaryResult')?.classList.add('hidden');
     }
     if ($('lessonNotes')) $('lessonNotes').value = record.notes || '';
+    if ($('transcriptInput') && record.transcript_text) $('transcriptInput').value = record.transcript_text;
   }
 
   function formatSeconds(value) {
@@ -133,26 +133,9 @@
     return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}` : `${minutes}:${String(seconds).padStart(2, '0')}`;
   }
 
-  function buildSummaryPrompt(transcript) {
-    return `لخّص نص المحاضرة التالية باللغة العربية، ونظّم النتيجة تحت العناوين الآتية:\n\n1. الخلاصة السريعة: من 5 إلى 8 نقاط.\n2. الأفكار والمفاهيم الأساسية.\n3. ما الذي أستفيد منه عملياً؟\n4. الخطوات أو التطبيقات المذكورة.\n5. الأخطاء أو التحذيرات.\n6. أسئلة للمراجعة لاحقاً.\n\nحافظ على دقة كلام المحاضر، ولا تضف معلومات غير موجودة في النص.\n\nنص المحاضرة:\n${transcript}`;
-  }
-
-  async function prepareForChatGPT() {
-    const transcript = $('transcriptInput')?.value.trim();
-    if (!transcript || transcript.length < 50) return toast('الصق نص المحاضرة أولاً.');
-    const chatWindow = window.open('https://chatgpt.com/', '_blank', 'noopener');
-    try {
-      await navigator.clipboard.writeText(buildSummaryPrompt(transcript));
-      toast('تم نسخ النص والطلب. الصقه في ChatGPT، ثم أعد الخلاصة لحفظها هنا.');
-    } catch (_error) {
-      toast('تعذر النسخ التلقائي. حدّد النص وانسخه يدويًا.');
-    }
-    if (!chatWindow) toast('اسمح بفتح النوافذ المنبثقة لفتح ChatGPT.');
-  }
-
-  async function saveSummary() {
-    const text = $('summaryPasteInput')?.value.trim();
-    if (!text) return toast('ألصق الخلاصة النهائية أولاً.');
+  async function saveSummaryText(text, transcript = '') {
+    text = String(text || '').trim();
+    if (!text) return toast('لا توجد خلاصة لحفظها.');
     const record = await getCurrentRecord();
     const { data: { user } } = await window.slcDB.auth.getUser();
     if (!record || !user) return toast('سجّل الدخول واختر محاضرة أولاً.');
@@ -166,6 +149,9 @@
     };
     const { error } = await window.slcDB.from('slc_summaries').upsert(payload, { onConflict: 'summary_key' });
     if (error) return toast(`تعذر حفظ الخلاصة: ${error.message}`);
+    if (transcript && record.kind === 'lecture') {
+      await window.slcDB.from('slc_lectures').update({ transcript_text: transcript, updated_at: new Date().toISOString() }).eq('id', record.id);
+    }
     renderSummary(text);
     toast('تم حفظ الخلاصة داخل المحاضرة');
   }
@@ -198,8 +184,6 @@
   }
 
   document.querySelector('[data-view="workspace"]')?.addEventListener('click', loadWorkspace);
-  $('prepareSummaryBtn')?.addEventListener('click', prepareForChatGPT);
-  $('saveSummaryBtn')?.addEventListener('click', saveSummary);
   let debounce;
   $('globalSearch')?.addEventListener('input', (event) => {
     clearTimeout(debounce);
@@ -209,4 +193,5 @@
     if (!event.target.closest('.search-wrap')) $('searchResults')?.classList.add('hidden');
   });
   if (location.hash === '#workspace') window.addEventListener('load', loadWorkspace);
+  window.slcWorkspace = { getCurrentRecord, renderSummary, saveSummaryText, toast };
 })();

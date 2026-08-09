@@ -2,6 +2,7 @@ window.SLC_MODULES = [
   {id:"dashboard",name:"لوحة التحكم",stage:"prototype",floor:0},
   {id:"inbox",name:"صندوق المعرفة",stage:"next",floor:1},
   {id:"workspace",name:"مساحة المحاضرة",stage:"operational",floor:1},
+  {id:"lecture-summarizer",name:"التلخيص العلمي",stage:"operational",floor:1},
   {id:"replay",name:"بوابة المحاضرات",stage:"operational",floor:2},
   {id:"advisor",name:"مستشار التعلّم",stage:"planned",floor:2},
   {id:"live",name:"التعلّم المباشر",stage:"planned",floor:3},

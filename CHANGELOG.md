@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.2.0 — Scientific Lecture Summarizer
+- Added a private in-platform Arabic summarizer with no external AI key or usage charge.
+- Added thematic segmentation so every part of a long lecture contributes to the result.
+- Added structured outputs for the executive summary, sequential themes, concepts, examples, actions, warnings, review questions, and coverage indicator.
+- Saved the source transcript and generated summary with the current lecture for later search.
+- Added an optional NotebookLM preparation export while keeping local summarization as the primary workflow.
+
 ## 3.1.0 — Personal Lecture Portal
 - Converted the product identity to عبدالرحمن's private personal learning center.
 - Added a database-backed lecture portal for YouTube, external learning platforms, direct video/audio, and PDF sources.
