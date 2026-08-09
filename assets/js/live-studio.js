@@ -194,6 +194,64 @@
     }
   }
 
+  async function startMic() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast("المتصفح لا يدعم التقاط الصوت من الميكروفون.");
+      return;
+    }
+    try {
+      state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      el.mic.classList.add("active");
+      el.captureEmpty.classList.add("hidden");
+      addEvent("audio", "تفعيل الميكروفون", "بدأ التقاط الصوت من الميكروفون.", "🎤");
+      state.micStream.getAudioTracks()[0]?.addEventListener("ended", () => {
+        el.mic.classList.remove("active");
+        if (!state.stream && !state.systemAudioStream) el.captureEmpty.classList.remove("hidden");
+        addEvent("audio", "توقف الميكروفون", "توقف التقاط الصوت من الميكروفون.", "■");
+      });
+      saveLocal();
+      toast("تم تفعيل الميكروفون");
+    } catch (error) {
+      if (error.name === "NotAllowedError") {
+        toast("رفض المتصفح إذن الميكروفون. فعّله من إعدادات الموقع (🔒 بجانب الرابط).");
+      } else {
+        console.error(error);
+        toast("تعذر الوصول للميكروفون.");
+      }
+    }
+  }
+
+  async function startSystemAudio() {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      toast("المتصفح لا يدعم التقاط صوت النظام. استخدم Chrome أو Edge.");
+      return;
+    }
+    try {
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      const audioTracks = displayStream.getAudioTracks();
+      if (!audioTracks.length) {
+        displayStream.getTracks().forEach((track) => track.stop());
+        toast("لم تختر مشاركة الصوت. أعد المحاولة وفعّل خيار \"مشاركة الصوت\" في نافذة المتصفح.");
+        return;
+      }
+      displayStream.getVideoTracks().forEach((track) => track.stop());
+      state.systemAudioStream = displayStream;
+      el.systemAudio.classList.add("active");
+      el.captureEmpty.classList.add("hidden");
+      addEvent("audio", "تفعيل صوت النظام", "بدأ التقاط صوت النظام (صوت Zoom مثلاً).", "🔊");
+      audioTracks[0]?.addEventListener("ended", () => {
+        el.systemAudio.classList.remove("active");
+        if (!state.stream && !state.micStream) el.captureEmpty.classList.remove("hidden");
+        addEvent("audio", "توقف صوت النظام", "توقف التقاط صوت النظام.", "■");
+      });
+      saveLocal();
+      toast("تم تفعيل صوت النظام");
+    } catch (error) {
+      if (error.name !== "NotAllowedError") console.error(error);
+      toast("لم يتم تفعيل صوت النظام");
+    }
+  }
+
   function captureSlide() {
     if (!state.stream || !el.screenPreview.videoWidth) {
       toast("اختر شاشة Zoom أولًا");
@@ -428,6 +486,8 @@
   });
   el.start?.addEventListener("click", startSession);
   el.shareScreen?.addEventListener("click", shareScreen);
+  el.mic?.addEventListener("click", startMic);
+  el.systemAudio?.addEventListener("click", startSystemAudio);
   el.captureSlide?.addEventListener("click", captureSlide);
   el.markImportant?.addEventListener("click", markImportant);
   el.markRevisited?.addEventListener("click", markRevisited);
