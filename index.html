@@ -301,6 +301,8 @@
             <button class="btn primary active" id="watchInsideBtn">▶ مشاهدة داخل المنصة</button>
             <a class="btn ghost external-link" id="watchOutsideBtn" href="https://www.youtube.com/" target="_blank" rel="noopener">↗ فتح في المصدر الأصلي</a>
             <button class="btn soft" id="resumeBtn">↪ استئناف من 24:36</button>
+            <button class="btn ghost hidden" id="editCurrentLectureBtn">✎ تعديل المحاضرة</button>
+            <button class="btn ghost hidden" id="deleteCurrentLectureBtn">حذف المحاضرة</button>
           </div>
         </article>
 
@@ -363,10 +365,11 @@
     <div class="modal-card lecture-modal-card">
       <button class="modal-close" id="closeLectureModal">×</button>
       <span class="eyebrow">Personal Lecture Portal</span>
-      <h2>إضافة محاضرة</h2>
+      <h2 id="lectureModalTitle">إضافة محاضرة</h2>
+      <input type="hidden" id="lectureEditingId">
       <div class="form-row">
         <label><span>الكورس *</span><select id="lectureCourseInput"><option value="">اختر الكورس</option></select></label>
-        <label><span>نوع المصدر</span><select id="lectureSourceTypeInput"><option value="youtube">YouTube</option><option value="external">منصة خارجية أو جامعية</option><option value="video">رابط فيديو مباشر</option><option value="audio">رابط صوت</option><option value="pdf">PDF</option></select></label>
+        <label><span>نوع المصدر</span><select id="lectureSourceTypeInput"><option value="youtube">YouTube</option><option value="external">منصة خارجية أو جامعية</option><option value="video">رابط فيديو مباشر</option><option value="audio">رابط صوت</option><option value="pdf">PDF</option><option value="live">محاضرة مباشرة محفوظة</option></select></label>
       </div>
       <label class="field-label" for="lectureTitleInput">عنوان المحاضرة *</label>
       <input class="wide-input" id="lectureTitleInput" placeholder="مثال: المحاضرة الخامسة — بناء الوكلاء الذكية">
@@ -416,13 +419,13 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.3.0"></script>
-  <script src="assets/js/supabase-integration.js?v=3.3.0"></script>
-  <script src="assets/js/live-studio.js?v=3.3.0"></script>
-  <script src="assets/js/workspace.js?v=3.3.0"></script>
-  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.3.0"></script>
-  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.3.0"></script>
-  <script src="src/modules/course-series/course-series.js?v=3.3.0"></script>
+  <script src="assets/js/app.js?v=3.4.0"></script>
+  <script src="assets/js/supabase-integration.js?v=3.4.0"></script>
+  <script src="assets/js/live-studio.js?v=3.4.0"></script>
+  <script src="assets/js/workspace.js?v=3.4.0"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.4.0"></script>
+  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.4.0"></script>
+  <script src="src/modules/course-series/course-series.js?v=3.4.0"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>

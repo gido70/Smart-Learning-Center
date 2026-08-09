@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.0 — Lecture Management Consolidation
+- Added lecture editing from the lecture portal, course series, and workspace.
+- Added course reassignment and ordering without re-uploading a lecture.
+- Improved confirmed deletion, including live-slide cleanup.
+- Disabled invalid combined summaries when a course has no summarized lectures.
+- Added a scoped migration that restores the experimental first lecture and attaches its saved summary.
+
 ## 3.3.0 — Course Series and Live Archive
 - Added ordered multi-day course views and combined course summaries.
 - Added deletion and replacement of saved lecture summaries.

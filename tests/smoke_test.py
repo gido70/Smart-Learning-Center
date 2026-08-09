@@ -13,7 +13,7 @@ for view in required_views:
 for token in ['watchInsideBtn','watchOutsideBtn','savePointBtn','lessonNotes','quickAddBtn']:
     if token not in index+app: errors.append(f'وظيفة أساسية مفقودة: {token}')
 if 'dir="rtl"' not in index: errors.append('دعم RTL مفقود')
-for token in ['addLectureBtn','lectureModal','localSummarizeBtn','notebookLmExportBtn','lecture-portal.js','lecture-summarizer.js','course-series.js','liveCourseSelect']:
+for token in ['addLectureBtn','lectureModal','lectureEditingId','editCurrentLectureBtn','deleteCurrentLectureBtn','localSummarizeBtn','notebookLmExportBtn','lecture-portal.js','lecture-summarizer.js','course-series.js','liveCourseSelect']:
     if token not in index: errors.append(f'بوابة المحاضرات مفقودة: {token}')
 if errors:
     print('SMOKE TEST FAILED')

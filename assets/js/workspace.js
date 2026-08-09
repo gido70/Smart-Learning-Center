@@ -6,6 +6,7 @@
   'use strict';
 
   const $ = (id) => document.getElementById(id);
+  let currentWorkspaceRecord = null;
   const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   }[char]));
@@ -102,6 +103,7 @@
     if (!title || !window.slcDB) return;
     title.textContent = 'جاري تحميل المحاضرة...';
     const record = await getCurrentRecord();
+    currentWorkspaceRecord = record;
     if (!record) {
       title.textContent = 'لم تُحدَّد محاضرة بعد';
       meta.textContent = 'اذهب إلى «بوابة المحاضرات» واختر المحاضرة المطلوبة.';
@@ -109,6 +111,8 @@
     }
 
     const isLecture = record.kind === 'lecture';
+    $('editCurrentLectureBtn')?.classList.toggle('hidden', !isLecture);
+    $('deleteCurrentLectureBtn')?.classList.toggle('hidden', !isLecture);
     const url = isLecture ? record.source_url : record.course_url;
     const provider = isLecture ? record.slc_courses?.provider_name : record.provider_name;
     title.textContent = record.title || 'بدون عنوان';
@@ -202,6 +206,8 @@
   }
 
   document.querySelector('[data-view="workspace"]')?.addEventListener('click', loadWorkspace);
+  $('editCurrentLectureBtn')?.addEventListener('click',()=>{if(currentWorkspaceRecord?.kind==='lecture')window.slcLecturePortal?.openEditLecture(currentWorkspaceRecord.id);});
+  $('deleteCurrentLectureBtn')?.addEventListener('click',async()=>{if(currentWorkspaceRecord?.kind!=='lecture')return;const ok=await window.slcLecturePortal?.deleteById(currentWorkspaceRecord.id);if(ok){localStorage.removeItem('slc_current_lecture_id');document.querySelector('[data-view="replay"]')?.click();}});
   let debounce;
   $('globalSearch')?.addEventListener('input', (event) => {
     clearTimeout(debounce);

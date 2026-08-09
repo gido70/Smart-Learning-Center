@@ -18,6 +18,15 @@
   const openModal = () => { $('lectureModal')?.classList.add('open'); $('lectureModal')?.setAttribute('aria-hidden', 'false'); };
   const closeModal = () => { $('lectureModal')?.classList.remove('open'); $('lectureModal')?.setAttribute('aria-hidden', 'true'); };
 
+  function resetForm() {
+    if ($('lectureEditingId')) $('lectureEditingId').value = '';
+    if ($('lectureModalTitle')) $('lectureModalTitle').textContent = 'إضافة محاضرة';
+    if ($('saveLectureBtn')) $('saveLectureBtn').textContent = 'حفظ المحاضرة';
+    ['lectureTitleInput','lectureUrlInput','lectureModuleInput','lectureOrderInput','lectureDurationInput','lectureNotesInput'].forEach(id=>{if($(id))$(id).value='';});
+    if ($('lectureSourceTypeInput')) $('lectureSourceTypeInput').value='youtube';
+    if ($('lectureOpenModeInput')) $('lectureOpenModeInput').value='auto';
+  }
+
   async function currentUser() {
     if (!window.slcDB) return null;
     const { data } = await window.slcDB.auth.getUser();
@@ -76,10 +85,11 @@
       return `<article class="content-card lecture-card" data-lecture-id="${lecture.id}" data-course-id="${lecture.course_id}">
         <div class="content-cover ${color}"><span class="tag">${escapeHtml(platformName(lecture))}</span><b>${lecture.duration_minutes ? `${lecture.duration_minutes} دقيقة` : statusLabel(lecture.status)}</b></div>
         <div class="content-body"><small>${escapeHtml(lecture.slc_courses?.title || 'كورس غير محدد')}</small><h3>${escapeHtml(lecture.title)}</h3><p>${escapeHtml(moduleInfo || lecture.notes || 'محاضرة محفوظة في بوابتك')}</p>
-          <div class="card-meta"><span>${escapeHtml(statusLabel(lecture.status))}</span><div><button class="text-btn lecture-open">فتح</button> <button class="course-delete lecture-delete">حذف</button></div></div>
+          <div class="card-meta"><span>${escapeHtml(statusLabel(lecture.status))}</span><div><button class="text-btn lecture-open">فتح</button> <button class="text-btn lecture-edit">تعديل</button> <button class="course-delete lecture-delete">حذف</button></div></div>
         </div></article>`;
     }).join('');
     box.querySelectorAll('.lecture-open').forEach((button) => button.addEventListener('click', () => openLecture(button.closest('.lecture-card'))));
+    box.querySelectorAll('.lecture-edit').forEach((button) => button.addEventListener('click', () => openEditLecture(button.closest('.lecture-card').dataset.lectureId)));
     box.querySelectorAll('.lecture-delete').forEach((button) => button.addEventListener('click', () => deleteLecture(button.closest('.lecture-card'))));
   }
 
@@ -115,44 +125,78 @@
     const courseId = $('lectureCourseInput')?.value;
     const title = $('lectureTitleInput')?.value.trim();
     const sourceUrl = $('lectureUrlInput')?.value.trim();
-    if (!courseId || !title || !sourceUrl) return toast('اختر الكورس واكتب عنوان المحاضرة ورابطها.');
-    try { new URL(sourceUrl); } catch (_error) { return toast('اكتب رابطًا صحيحًا يبدأ بـ http أو https.'); }
+    const sourceType = $('lectureSourceTypeInput')?.value || 'external';
+    if (!courseId || !title || (!sourceUrl && sourceType !== 'live')) return toast('اختر الكورس واكتب عنوان المحاضرة ورابطها.');
+    if (sourceUrl) try { new URL(sourceUrl); } catch (_error) { return toast('اكتب رابطًا صحيحًا يبدأ بـ http أو https.'); }
     const button = $('saveLectureBtn');
     button.disabled = true;
     button.textContent = 'جاري الحفظ...';
-    const { error } = await window.slcDB.from('slc_lectures').insert({
+    const editingId = $('lectureEditingId')?.value;
+    const payload = {
       owner_id: user.id,
       course_id: courseId,
       title,
       source_url: sourceUrl,
-      source_type: $('lectureSourceTypeInput')?.value || 'external',
+      source_type: sourceType,
       open_mode: $('lectureOpenModeInput')?.value || 'auto',
       module_name: $('lectureModuleInput')?.value.trim() || null,
       lecture_order: Number($('lectureOrderInput')?.value || 0) || null,
       duration_minutes: Number($('lectureDurationInput')?.value || 0) || null,
       notes: $('lectureNotesInput')?.value.trim() || null,
-      status: 'not_started'
-    });
+      ...(!editingId ? { status: 'not_started' } : {})
+    };
+    const { error } = editingId
+      ? await window.slcDB.from('slc_lectures').update(payload).eq('id', editingId)
+      : await window.slcDB.from('slc_lectures').insert(payload);
     button.disabled = false;
     button.textContent = 'حفظ المحاضرة';
     if (error) return toast(`تعذر الحفظ: ${error.message}`);
-    ['lectureTitleInput', 'lectureUrlInput', 'lectureModuleInput', 'lectureOrderInput', 'lectureDurationInput', 'lectureNotesInput'].forEach((id) => { if ($(id)) $(id).value = ''; });
+    resetForm();
     closeModal();
-    toast('تم حفظ المحاضرة في بوابتك');
+    toast(editingId ? 'تم تحديث المحاضرة' : 'تم حفظ المحاضرة في بوابتك');
     await loadLectures();
   }
 
-  async function deleteLecture(card) {
-    if (!confirm('هل تريد حذف هذه المحاضرة من بوابتك؟')) return;
-    const { error } = await window.slcDB.from('slc_lectures').delete().eq('id', card.dataset.lectureId);
+  async function deleteById(lectureId) {
+    const lecture = lectures.find(item=>item.id===lectureId);
+    if (!confirm(`هل تريد حذف «${lecture?.title||'هذه المحاضرة'}» وخلاصتها؟ لن يُحذف الكورس أو بقية الأيام.`)) return false;
+    const user=await currentUser();
+    if (lecture?.source_type==='live' && user) {
+      const {data:files}=await window.slcDB.storage.from('slc-live-assets').list(`${user.id}/${lectureId}`);
+      if(files?.length) await window.slcDB.storage.from('slc-live-assets').remove(files.map(f=>`${user.id}/${lectureId}/${f.name}`));
+    }
+    const { error } = await window.slcDB.from('slc_lectures').delete().eq('id', lectureId);
     if (error) return toast(`تعذر الحذف: ${error.message}`);
     toast('تم حذف المحاضرة');
     await loadLectures();
+    return true;
+  }
+
+  async function deleteLecture(card) { return deleteById(card.dataset.lectureId); }
+
+  async function openEditLecture(lectureId) {
+    const lecture=lectures.find(item=>item.id===lectureId) || (await window.slcDB.from('slc_lectures').select('*').eq('id',lectureId).maybeSingle()).data;
+    if(!lecture)return toast('تعذر تحميل بيانات المحاضرة.');
+    await loadCourseOptions();
+    $('lectureEditingId').value=lecture.id;
+    $('lectureModalTitle').textContent='تعديل المحاضرة';
+    $('lectureCourseInput').value=lecture.course_id||'';
+    $('lectureSourceTypeInput').value=lecture.source_type||'external';
+    $('lectureTitleInput').value=lecture.title||'';
+    $('lectureUrlInput').value=lecture.source_url||'';
+    $('lectureModuleInput').value=lecture.module_name||'';
+    $('lectureOrderInput').value=lecture.lecture_order||'';
+    $('lectureDurationInput').value=lecture.duration_minutes||'';
+    $('lectureOpenModeInput').value=lecture.open_mode||'auto';
+    $('lectureNotesInput').value=lecture.notes||'';
+    $('saveLectureBtn').textContent='حفظ التعديلات';
+    openModal();
   }
 
   async function openLectureModal() {
     if (!await currentUser()) return toast('سجّل الدخول أولاً.');
     await loadCourseOptions();
+    resetForm();
     openModal();
   }
 
@@ -163,4 +207,5 @@
   document.querySelector('[data-view="replay"]')?.addEventListener('click', loadLectures);
   window.slcDB?.auth.onAuthStateChange(() => loadLectures());
   if (location.hash === '#replay') window.addEventListener('load', loadLectures);
+  window.slcLecturePortal={loadLectures,openEditLecture,deleteById};
 })();

@@ -28,14 +28,21 @@
     document.getElementById('seriesTitle').textContent=course?.title||'الدورة';
     document.getElementById('seriesMeta').textContent=[course?.provider_name,course?.instructor_name,`${currentCourse.lectures.length} محاضرة`].filter(Boolean).join(' · ');
     const summaryIds=new Set(currentCourse.summaries.filter(x=>x.lecture_id).map(x=>x.lecture_id));
-    document.getElementById('seriesLectures').innerHTML=currentCourse.lectures.length?currentCourse.lectures.map((l,i)=>`<button class="series-day" data-id="${l.id}"><b>اليوم ${l.lecture_order||i+1}: ${esc(l.title)}</b><span>${esc(l.module_name||'')} ${l.duration_minutes?`· ${l.duration_minutes} دقيقة`:''} ${summaryIds.has(l.id)?'· ✅ ملخّصة':'· تحتاج خلاصة'}</span></button>`).join(''):'<p class="muted-note">لا توجد محاضرات مرتبطة بهذه الدورة بعد.</p>';
-    document.querySelectorAll('.series-day').forEach(b=>b.onclick=()=>{localStorage.setItem('slc_current_course_id',courseId);localStorage.setItem('slc_current_lecture_id',b.dataset.id);close();document.querySelector('[data-view="workspace"]')?.click();});
+    document.getElementById('seriesLectures').innerHTML=currentCourse.lectures.length?currentCourse.lectures.map((l,i)=>`<article class="series-day" data-id="${l.id}"><div class="series-day-main"><b>اليوم ${l.lecture_order||i+1}: ${esc(l.title)}</b><span>${esc(l.module_name||'')} ${l.duration_minutes?`· ${l.duration_minutes} دقيقة`:''} ${summaryIds.has(l.id)?'· ✅ ملخّصة':'· تحتاج خلاصة'}</span></div><div class="series-day-actions"><button class="text-btn series-open">فتح</button><button class="text-btn series-edit">تعديل</button><button class="course-delete series-delete">حذف</button></div></article>`).join(''):'<p class="muted-note">لا توجد محاضرات مرتبطة بهذه الدورة بعد. أضف محاضرة واختر هذا الكورس.</p>';
+    document.querySelectorAll('.series-open').forEach(b=>b.onclick=()=>openLecture(courseId,b.closest('.series-day').dataset.id));
+    document.querySelectorAll('.series-edit').forEach(b=>b.onclick=()=>{close();window.slcLecturePortal?.openEditLecture(b.closest('.series-day').dataset.id);});
+    document.querySelectorAll('.series-delete').forEach(b=>b.onclick=async()=>{const ok=await window.slcLecturePortal?.deleteById(b.closest('.series-day').dataset.id);if(ok)open(courseId);});
     const saved=currentCourse.summaries.find(x=>!x.lecture_id)?.summary_html;
-    const out=document.getElementById('seriesSummary'); out.textContent=saved||''; out.classList.toggle('hidden',!saved);
+    const out=document.getElementById('seriesSummary'); out.textContent=saved||''; out.classList.toggle('hidden',!saved||!currentCourse.lectures.length);
+    const build=document.getElementById('buildCourseSummaryBtn');
+    const summarizedCount=currentCourse.summaries.filter(x=>x.lecture_id&&x.summary_html).length;
+    build.disabled=!currentCourse.lectures.length||!summarizedCount;
+    build.textContent=!currentCourse.lectures.length?'أضف محاضرات أولًا':!summarizedCount?'لخّص أحد أيام الدورة أولًا':'✨ إنشاء الخلاصة المجمعة للدورة';
     const modal=document.getElementById('courseSeriesModal'); modal.classList.add('open'); modal.setAttribute('aria-hidden','false');
   }
 
   function close(){const m=document.getElementById('courseSeriesModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true');}
+  function openLecture(courseId,lectureId){localStorage.setItem('slc_current_course_id',courseId);localStorage.setItem('slc_current_lecture_id',lectureId);close();document.querySelector('[data-view="workspace"]')?.click();}
 
   async function buildCombined(){
     const parts=currentCourse.summaries.filter(x=>x.lecture_id&&x.summary_html).map((x,i)=>`اليوم ${i+1}:\n${x.summary_html}`);
