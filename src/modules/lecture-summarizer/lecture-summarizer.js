@@ -13,6 +13,7 @@
     warning: /(?:انتبه|تحذير|خطأ|مشكلة|خطر|لا ينبغي|تجنب|احذر|عيب|ملاحظة مهمة)/,
     definition: /(?:تعريف|يعني|يُقصد|يقصد|مفهوم|مصطلح|هو عبارة|هي عبارة|نسميه)/
   };
+  const NOISE = /^(?:السلام عليكم|وعليكم السلام|شكرا|شكراً|اهلا|أهلا|مرحبا|طيب|تمام|نعم|ايوه|أيوه|هل الصوت|واضح الصوت|من لديه سؤال|أي سؤال|نشوفكم|يعطيكم العافية)/;
 
   function normalize(value = '') {
     return String(value).replace(/[\u064B-\u065F\u0670ـ]/g, '').replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').toLowerCase();
@@ -34,7 +35,7 @@
   function splitSentences(text) {
     return text.split(/(?<=[.!؟!?؛])\s+|\n+/u)
       .map((sentence) => sentence.replace(/^[-–—•\s]+/, '').trim())
-      .filter((sentence) => sentence.length >= 24 && tokens(sentence).length >= 4)
+      .filter((sentence) => sentence.length >= 24 && tokens(sentence).length >= 4 && !NOISE.test(normalize(sentence)))
       .map((text, index) => ({ text, index, words: tokens(text) }));
   }
 
@@ -67,6 +68,14 @@
       .slice(0, count).sort((a, b) => a.index - b.index);
   }
 
+  function uniqueAcross(groups) {
+    const used = [];
+    return groups.map((group) => group.filter((item) => {
+      if (used.some((picked) => similarity(item, picked) > 0.48)) return false;
+      used.push(item); return true;
+    }));
+  }
+
   function keywords(sentences, limit = 12) {
     const counts = new Map();
     sentences.flatMap((item) => [...new Set(item.words)]).forEach((word) => counts.set(word, (counts.get(word) || 0) + 1));
@@ -82,30 +91,20 @@
     const sentences = splitSentences(cleaned);
     if (sentences.length < 3) throw new Error('النص قصير أو غير واضح بما يكفي. ألصق نص المحاضرة كاملاً.');
     const freq = frequency(sentences);
-    const sectionCount = Math.min(12, Math.max(4, Math.ceil(sentences.length / 14)));
-    const size = Math.ceil(sentences.length / sectionCount);
-    const sections = [];
-    const represented = [];
-    for (let start = 0; start < sentences.length; start += size) {
-      const group = sentences.slice(start, start + size);
-      const target = Math.min(4, Math.max(2, Math.ceil(group.length / 4)));
-      let selected = choose(group, target, freq, represented);
-      // لا نترك أي جزء بلا تمثيل حتى عندما تتشابه صياغته مع جزء سابق.
-      if (!selected.length) selected = choose(group, target, freq);
-      represented.push(...selected);
-      sections.push({ selected, words: keywords(group, 4) });
-    }
-    const executive = choose(sentences, Math.min(14, Math.max(7, Math.ceil(sentences.length * 0.09))), freq);
+    // ملخص ثابت الحجم تقريباً مهما طالت المحاضرة: القيمة لا إعادة كتابة النص.
+    const executive = choose(sentences, Math.min(12, Math.max(8, Math.ceil(Math.log2(sentences.length) * 1.35))), freq);
     const bySignal = (name, limit) => choose(sentences.filter((item) => SIGNALS[name].test(normalize(item.text))), limit, freq);
-    const concepts = bySignal('definition', 10);
-    const actions = bySignal('action', 10);
-    const examples = bySignal('example', 8);
-    const warnings = bySignal('warning', 8);
-    const topWords = keywords(sentences, 16);
-    const themes = sections.map((section, index) => `### المحور ${index + 1}: ${section.words.join('، ') || `الجزء ${index + 1}`}\n${bullets(section.selected, 'لم تظهر جملة مكتملة في هذا الجزء؛ راجع النص الأصلي.')}`).join('\n\n');
-    const questions = topWords.slice(0, 8).map((word, index) => `${index + 1}. اشرح فكرة «${word}» كما وردت في المحاضرة، وما علاقتها بالمحاور الأخرى؟`).join('\n');
-    const coverage = Math.round((sections.filter((section) => section.selected.length).length / sections.length) * 100);
-    return `# الخلاصة العلمية: ${title}\n\n## الخلاصة التنفيذية\n${bullets(executive, 'لم تتوفر أفكار كافية.')}\n\n## محاور المحاضرة بالتسلسل\n${themes}\n\n## المفاهيم والتعريفات الأساسية\n${bullets(concepts, `الكلمات المركزية في النص: ${topWords.join('، ')}.`)}\n\n## التطبيقات والخطوات العملية\n${bullets(actions, 'لم يذكر النص خطوات عملية صريحة.')}\n\n## الأمثلة والأدلة والحالات\n${bullets(examples, 'لم يذكر النص أمثلة صريحة.')}\n\n## التنبيهات والأخطاء والملاحظات المهمة\n${bullets(warnings, 'لم يذكر النص تحذيرات صريحة.')}\n\n## مصطلحات البحث\n${topWords.map((word) => `- ${word}`).join('\n')}\n\n## أسئلة للمراجعة والاستيعاب\n${questions}\n\n## مؤشر التغطية\n- غُطيت ${sections.filter((section) => section.selected.length).length} من ${sections.length} أجزاء زمنية/موضوعية (${coverage}%).\n- التلخيص مستخرج من كلام المحاضر ولا يضيف معلومات خارج النص؛ يُنصح بمراجعة المحاور المرتبطة ببحث أو قرار مهم.`;
+    let actions = bySignal('action', 6);
+    let notes = choose([
+      ...sentences.filter((item) => SIGNALS.definition.test(normalize(item.text))),
+      ...sentences.filter((item) => SIGNALS.warning.test(normalize(item.text))),
+      ...sentences.filter((item) => SIGNALS.example.test(normalize(item.text)))
+    ], 5, freq);
+    [actions, notes] = uniqueAcross([actions.filter((item) => !executive.some((main) => similarity(item, main) > 0.48)), notes]);
+    const urls = [...new Set(String(raw).match(/https?:\/\/[^\s<>"']+/gi) || [])].slice(0, 15);
+    const topWords = keywords(sentences, 12);
+    const opening = executive.slice(0, 3).map((item) => item.text).join(' ');
+    return `# خلاصة المحاضرة: ${title}\n\n## ما موضوع المحاضرة وما فائدتها؟\n${opening}\n\n## الزبدة التي تستحق الاحتفاظ بها\n${bullets(executive, 'لم تتوفر أفكار كافية.')}\n\n## كيف أستفيد منها عملياً؟\n${bullets(actions, 'لم تتضمن المحاضرة خطوات تطبيقية صريحة؛ فائدتها معرفية أو تفسيرية بالدرجة الأولى.')}\n\n## ملاحظات مهمة للرجوع إليها\n${bullets(notes, 'لا توجد ملاحظات إضافية مؤثرة خارج الخلاصة.')}\n\n## المواقع والروابط المذكورة\n${urls.length ? urls.map((url) => `- ${url}`).join('\n') : '- لم يظهر رابط مكتوب بوضوح داخل نص المحاضرة.'}\n\n## كلمات تساعد في البحث داخل المنصة\n${topWords.join('، ')}\n\n> حُذفت المقدمات والنقاشات والتكرار والأمثلة غير الضرورية، وأُبقيت النتائج والمعلومات القابلة للفهم أو التطبيق.`;
   }
 
   async function summarizeNow() {
