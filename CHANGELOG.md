@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.5.2 — Improved Local Summary
+- Kept the entire summarization workflow inside the platform with no API or external handoff.
+- Removed malformed timestamps even when glued directly to Arabic words.
+- Expanded moderate Egyptian-to-MSA normalization and rejected more transcript noise.
+- Preserved a concise extractive summary suitable for quick review.
+
 ## 3.5.1 — Transcript Repair
 - Removed malformed speech-to-text timestamps such as `8g ثواني` and `44g دقيقة`.
 - Expanded Egyptian-to-MSA normalization for the expressions found in the uploaded lecture.
