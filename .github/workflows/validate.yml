@@ -27,5 +27,8 @@ jobs:
       - name: Run smoke test
         run: python tests/smoke_test.py
 
+      - name: Test live session controls
+        run: node tests/live_session_controls_test.js
+
       - name: Check release
         run: python scripts/check_release.py
