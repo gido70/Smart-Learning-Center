@@ -165,7 +165,9 @@
           </div>
           <div class="live-head-actions">
             <span class="live-save-state" id="liveSaveState">● الحفظ المحلي جاهز</span>
-            <button class="btn primary" id="startLiveBtn">● بدء جلسة مباشرة</button>
+            <button class="btn primary" id="startLiveBtn">● بدء الجلسة</button>
+            <button class="btn soft" id="pauseLiveBtn" disabled>⏸ إيقاف مؤقت</button>
+            <button class="btn soft" id="resumeLiveBtn" disabled>▶ متابعة</button>
           </div>
         </div>
 
@@ -204,10 +206,12 @@
                 <button id="microphoneBtn">🎤 الميكروفون</button>
                 <button id="systemAudioBtn">🔊 صوت النظام</button>
                 <button id="shareScreenBtn">🖥 مشاركة شاشة Zoom</button>
+                <button id="reselectScreenBtn">↻ إعادة اختيار مصدر الشاشة</button>
                 <button id="captureSlideBtn">📸 حفظ الشريحة</button>
                 <button id="sourceLanguageBtn">🌐 لغة المصدر</button>
                 <button id="studioSettingsBtn">⚙ الإعدادات</button>
               </div>
+              <div class="muted-note" id="liveAudioStatus" role="status" aria-live="polite">الصوت غير متصل</div>
             </div>
 
             <div class="live-transcript">
@@ -272,7 +276,7 @@
             </article>
 
             <article class="panel finish-live-panel">
-              <button class="btn primary wide" id="finishLiveBtn">إنهاء وإنشاء ملف المحاضرة</button>
+              <button class="btn primary wide" id="finishLiveBtn">إنهاء وحفظ</button>
               <div class="live-export-actions">
                 <button id="exportLiveJsonBtn">تنزيل JSON</button>
                 <button id="exportLiveTxtBtn">تنزيل TXT</button>
@@ -421,6 +425,7 @@
   <div class="toast" id="toast">تمت العملية بنجاح</div>
   <script src="assets/js/app.js?v=3.5.2"></script>
   <script src="assets/js/supabase-integration.js?v=3.5.2"></script>
+  <script src="src/modules/live-learning/session-controls.js?v=3.5.2"></script>
   <script src="assets/js/live-studio.js?v=3.5.2"></script>
   <script src="assets/js/workspace.js?v=3.5.2"></script>
   <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.2"></script>
