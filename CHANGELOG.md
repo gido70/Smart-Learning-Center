@@ -1,6 +1,8 @@
 # Changelog
 
 ## 3.5.2 — Improved Local Summary
+- Added resumable live-session controls, automatic distinct-slide capture, real audio-status reporting, browser recording, and local crash recovery without changing the release number.
+- Added a platform-wide Arabic functional audit and focused tests for live-session timing, recovery, slide deduplication, and media-track shutdown.
 - Kept the entire summarization workflow inside the platform with no API or external handoff.
 - Removed malformed timestamps even when glued directly to Arabic words.
 - Expanded moderate Egyptian-to-MSA normalization and rejected more transcript noise.
