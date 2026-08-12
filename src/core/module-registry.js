@@ -6,7 +6,7 @@ window.SLC_MODULES = [
   {id:"course-series",name:"سلاسل الدورات",stage:"operational",floor:1},
   {id:"replay",name:"بوابة المحاضرات",stage:"operational",floor:2},
   {id:"advisor",name:"مستشار التعلّم",stage:"planned",floor:2},
-  {id:"live",name:"التعلّم المباشر",stage:"operational",floor:3},
+  {id:"live",name:"التعلّم المباشر",stage:"prototype",floor:3},
   {id:"micro",name:"التعلّم السريع",stage:"planned",floor:3},
   {id:"projects",name:"المشروعات",stage:"planned",floor:4},
   {id:"review",name:"المراجعة",stage:"planned",floor:4},
