@@ -7,6 +7,61 @@
   const controls = window.SLCLiveSessionControls;
   const clock = new controls.SessionClock();
   const DRAFT_KEY = "slc_live_studio_draft_v352";
+  const LAST_SESSION_KEY = "slc_live_studio_last_session_v352";
+  const DRAFT_DB_NAME = "slc_live_studio";
+  const DRAFT_STORE_NAME = "sessions";
+
+  function openDraftDatabase() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error("IndexedDB غير متاح"));
+      const request = indexedDB.open(DRAFT_DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(DRAFT_STORE_NAME)) db.createObjectStore(DRAFT_STORE_NAME);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("تعذر فتح التخزين المحلي"));
+    });
+  }
+
+  async function writeStoredSession(key, value) {
+    const db = await openDraftDatabase();
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction(DRAFT_STORE_NAME, "readwrite");
+      transaction.objectStore(DRAFT_STORE_NAME).put(value, key);
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  }
+
+  async function readStoredSession(key) {
+    const db = await openDraftDatabase();
+    const value = await new Promise((resolve, reject) => {
+      const transaction = db.transaction(DRAFT_STORE_NAME, "readonly");
+      const request = transaction.objectStore(DRAFT_STORE_NAME).get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return value;
+  }
+
+  async function deleteStoredSession(key) {
+    try {
+      const db = await openDraftDatabase();
+      await new Promise((resolve, reject) => {
+        const transaction = db.transaction(DRAFT_STORE_NAME, "readwrite");
+        transaction.objectStore(DRAFT_STORE_NAME).delete(key);
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+      });
+      db.close();
+    } catch (_error) {
+      // لا تمنع عملية الإنهاء إذا تعذر تنظيف التخزين.
+    }
+    localStorage.removeItem(key);
+  }
 
   const state = {
     mode: "audio",
@@ -98,16 +153,25 @@
     setTimeout(() => node.classList.remove("show"), 2200);
   };
 
-  function saveLocal() {
+  async function saveLocal() {
     const payload = buildLectureFile();
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+      await writeStoredSession(DRAFT_KEY, payload);
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        ...payload,
+        slides: payload.slides.map(({ image_data_url, ...slide }) => slide)
+      }));
+      if (el.saveState) el.saveState.textContent = `● حُفظت المسودة ${new Date().toLocaleTimeString("ar")}`;
     } catch (_error) {
-      if (el.saveState) el.saveState.textContent = "تعذر حفظ المسودة: مساحة المتصفح ممتلئة";
-      return;
-    }
-    if (el.saveState) {
-      el.saveState.textContent = `● حُفظت المسودة ${new Date().toLocaleTimeString("ar")}`;
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          ...payload,
+          slides: payload.slides.map(({ image_data_url, ...slide }) => slide)
+        }));
+        if (el.saveState) el.saveState.textContent = "● حُفظت البيانات دون صور كاملة";
+      } catch (_fallbackError) {
+        if (el.saveState) el.saveState.textContent = "تعذر حفظ المسودة: مساحة المتصفح ممتلئة";
+      }
     }
   }
 
@@ -176,12 +240,31 @@
     saveLocal();
   }
 
+  function resetFinishedSession() {
+    if (state.status !== "finished") return;
+    state.startedAt = null;
+    state.events = [];
+    state.slides = [];
+    state.questions = [];
+    state.highlights = [];
+    state.slideCount = 0;
+    state.currentSlideDataUrl = null;
+    state.slideFingerprints = [];
+    state.lastFingerprint = null;
+    state.recordingChunks = [];
+    state.recordingBlob = null;
+    state.recorder = null;
+    state.transcript = "";
+    el.timer.textContent = "00:00:00";
+    renderTimeline();
+    renderHighlights();
+  }
+
   function startSession() {
-    if (state.active) {
-      toast("الجلسة تعمل بالفعل");
-      return;
-    }
-    clock.start();
+    if (state.active) return toast("الجلسة تعمل بالفعل");
+    if (state.status === "paused") return toast("استخدم زر متابعة لاستكمال الجلسة الحالية");
+    resetFinishedSession();
+    if (!clock.start()) return toast("تعذر بدء جلسة جديدة");
     state.active = true;
     state.status = "active";
     state.startedAt = Date.now();
@@ -254,6 +337,7 @@
       });
       startAutoCapture();
       updateAudioStatus();
+      if (state.active) startRecorder();
       saveLocal();
       toast("تم ربط شاشة العرض");
     } catch (error) {
@@ -279,7 +363,7 @@
         updateAudioStatus();
       });
       updateAudioStatus();
-      startRecorder();
+      await restartRecorder();
       saveLocal();
       toast("تم تفعيل الميكروفون");
     } catch (error) {
@@ -317,7 +401,7 @@
         updateAudioStatus();
       });
       updateAudioStatus();
-      startRecorder();
+      await restartRecorder();
       saveLocal();
       toast("تم تفعيل صوت النظام");
     } catch (error) {
@@ -550,28 +634,35 @@
     return saved;
   }
 
+  function renderFinishedState() {
+    el.statusBadge.textContent = "انتهت";
+    el.statusBadge.className = "tag green";
+    el.start.disabled = false;
+    el.start.textContent = "● بدء جلسة جديدة";
+    el.pause.disabled = true;
+    el.resume.disabled = true;
+  }
+
   async function confirmFinish() {
     await finishMedia();
+    renderFinishedState();
     const localFile = buildLectureFile();
-    localStorage.setItem("slc_live_studio_last_session_v352", JSON.stringify(localFile));
-    localStorage.removeItem(DRAFT_KEY);
+    try {
+      await writeStoredSession(LAST_SESSION_KEY, { ...localFile, recording_blob: state.recordingBlob });
+    } catch (_error) {
+      if (el.saveState) el.saveState.textContent = "تعذر حفظ النسخة الكاملة؛ نزّل الملفات قبل مغادرة الصفحة";
+    }
+    await deleteStoredSession(DRAFT_KEY);
     if (state.recordingBlob) download(`smart-learning-recording-${Date.now()}.webm`, state.recordingBlob, state.recordingBlob.type);
     if (!window.slcDB) {
       closeFinishModal();
-      return toast("تم حفظ الجلسة محليًا؛ الأرشفة السحابية غير متاحة");
+      return toast("تم إنهاء الجلسة وحفظها محليًا");
     }
     const title=el.lectureTitle?.value.trim();
     const courseId=el.courseSelect?.value;
     if (!title || !courseId) return toast('اكتب عنوان المحاضرة واختر الدورة.');
     el.confirmFinish.disabled=true; el.confirmFinish.textContent='جاري الحفظ في المكتبة...';
-    state.active = false;
-    clearInterval(state.timerId);
-    el.statusBadge.textContent = "انتهت";
-    el.statusBadge.className = "tag green";
-    el.start.disabled = false;
-    el.start.textContent = "● بدء جلسة جديدة";
     refreshSummary();
-    saveLocal();
     const file=buildLectureFile();
     const {data:{user}}=await window.slcDB.auth.getUser();
     if (!user) { el.confirmFinish.disabled=false; el.confirmFinish.textContent='حفظ ملف المحاضرة'; return toast('سجّل الدخول أولًا.'); }
@@ -597,8 +688,25 @@
     el.audioStatus.classList.toggle("connected", connected);
   }
 
+  async function stopRecorder() {
+    if (!state.recorder || state.recorder.state === "inactive") return;
+    await new Promise((resolve) => {
+      state.recorder.addEventListener("stop", resolve, { once: true });
+      state.recorder.stop();
+    });
+    if (state.recordingChunks.length) {
+      state.recordingBlob = new Blob(state.recordingChunks, { type: state.recorder.mimeType || "audio/webm" });
+    }
+  }
+
+  async function restartRecorder() {
+    if (!state.active) return;
+    await stopRecorder();
+    startRecorder();
+  }
+
   function startRecorder() {
-    if (!state.active || state.recorder?.state === "recording" || typeof MediaRecorder === "undefined") return;
+    if (!state.active || ["recording", "paused"].includes(state.recorder?.state) || typeof MediaRecorder === "undefined") return;
     const tracks = audioTracks();
     updateAudioStatus();
     if (!tracks.length) return;
@@ -641,23 +749,20 @@
     state.status = "finished";
     clearInterval(state.timerId);
     stopAutoCapture();
-    if (state.recorder && state.recorder.state !== "inactive") {
-      await new Promise((resolve) => {
-        state.recorder.addEventListener("stop", resolve, { once: true });
-        state.recorder.stop();
-      });
-      if (state.recordingChunks.length) {
-        state.recordingBlob = new Blob(state.recordingChunks, { type: state.recorder.mimeType || "audio/webm" });
-      }
-    }
+    await stopRecorder();
     controls.stopAllTracks([state.stream, state.micStream, state.systemAudioStream]);
     state.stream = null; state.micStream = null; state.systemAudioStream = null;
     el.screenPreview.srcObject = null;
     updateAudioStatus();
   }
 
-  function restoreDraft() {
-    const draft = controls.recoverDraft(localStorage, DRAFT_KEY);
+  async function restoreDraft() {
+    let draft = null;
+    try {
+      draft = await readStoredSession(DRAFT_KEY);
+    } catch (_error) {
+      draft = controls.recoverDraft(localStorage, DRAFT_KEY);
+    }
     if (!draft || (!draft.active && draft.status !== "paused")) return;
     state.mode = draft.mode || "audio";
     state.status = "paused";
