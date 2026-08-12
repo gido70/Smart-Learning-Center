@@ -4,6 +4,64 @@
 
   const $ = (id) => document.getElementById(id);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
+  const controls = window.SLCLiveSessionControls;
+  const clock = new controls.SessionClock();
+  const DRAFT_KEY = "slc_live_studio_draft_v352";
+  const LAST_SESSION_KEY = "slc_live_studio_last_session_v352";
+  const DRAFT_DB_NAME = "slc_live_studio";
+  const DRAFT_STORE_NAME = "sessions";
+
+  function openDraftDatabase() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error("IndexedDB غير متاح"));
+      const request = indexedDB.open(DRAFT_DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(DRAFT_STORE_NAME)) db.createObjectStore(DRAFT_STORE_NAME);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("تعذر فتح التخزين المحلي"));
+    });
+  }
+
+  async function writeStoredSession(key, value) {
+    const db = await openDraftDatabase();
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction(DRAFT_STORE_NAME, "readwrite");
+      transaction.objectStore(DRAFT_STORE_NAME).put(value, key);
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  }
+
+  async function readStoredSession(key) {
+    const db = await openDraftDatabase();
+    const value = await new Promise((resolve, reject) => {
+      const transaction = db.transaction(DRAFT_STORE_NAME, "readonly");
+      const request = transaction.objectStore(DRAFT_STORE_NAME).get(key);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+    db.close();
+    return value;
+  }
+
+  async function deleteStoredSession(key) {
+    try {
+      const db = await openDraftDatabase();
+      await new Promise((resolve, reject) => {
+        const transaction = db.transaction(DRAFT_STORE_NAME, "readwrite");
+        transaction.objectStore(DRAFT_STORE_NAME).delete(key);
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+      });
+      db.close();
+    } catch (_error) {
+      // لا تمنع عملية الإنهاء إذا تعذر تنظيف التخزين.
+    }
+    localStorage.removeItem(key);
+  }
 
   const state = {
     mode: "audio",
@@ -18,12 +76,22 @@
     highlights: [],
     currentSlideDataUrl: null,
     important: false,
-    revisitedSlideNumbers: []
+    revisitedSlideNumbers: [],
+    status: "idle",
+    autoCaptureId: null,
+    lastFingerprint: null,
+    slideFingerprints: [],
+    recorder: null,
+    recordingChunks: [],
+    recordingBlob: null,
+    transcript: ""
   };
 
   const el = {
     modeSwitch: $("captureModeSwitch"),
     start: $("startLiveBtn"),
+    pause: $("pauseLiveBtn"),
+    resume: $("resumeLiveBtn"),
     finish: $("finishLiveBtn"),
     screen: $("studioScreen"),
     audioPlaceholder: $("audioPlaceholder"),
@@ -36,9 +104,11 @@
     statusBadge: $("liveStatusBadge"),
     saveState: $("liveSaveState"),
     shareScreen: $("shareScreenBtn"),
+    reselectScreen: $("reselectScreenBtn"),
     captureSlide: $("captureSlideBtn"),
     mic: $("microphoneBtn"),
     systemAudio: $("systemAudioBtn"),
+    audioStatus: $("liveAudioStatus"),
     slideBadge: $("slideNumberBadge"),
     timeline: $("lectureTimeline"),
     slideMeta: $("currentSlideMeta"),
@@ -73,7 +143,7 @@
     return `${h}:${m}:${s}`;
   };
 
-  const elapsed = () => state.startedAt ? Math.floor((Date.now() - state.startedAt) / 1000) : 0;
+  const elapsed = () => clock.elapsedSeconds();
 
   const toast = (message) => {
     const node = $("toast");
@@ -83,11 +153,25 @@
     setTimeout(() => node.classList.remove("show"), 2200);
   };
 
-  function saveLocal() {
+  async function saveLocal() {
     const payload = buildLectureFile();
-    localStorage.setItem("slc_live_studio_draft_v301", JSON.stringify(payload));
-    if (el.saveState) {
-      el.saveState.textContent = `● حُفظت المسودة ${new Date().toLocaleTimeString("ar")}`;
+    try {
+      await writeStoredSession(DRAFT_KEY, payload);
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        ...payload,
+        slides: payload.slides.map(({ image_data_url, ...slide }) => slide)
+      }));
+      if (el.saveState) el.saveState.textContent = `● حُفظت المسودة ${new Date().toLocaleTimeString("ar")}`;
+    } catch (_error) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          ...payload,
+          slides: payload.slides.map(({ image_data_url, ...slide }) => slide)
+        }));
+        if (el.saveState) el.saveState.textContent = "● حُفظت البيانات دون صور كاملة";
+      } catch (_fallbackError) {
+        if (el.saveState) el.saveState.textContent = "تعذر حفظ المسودة: مساحة المتصفح ممتلئة";
+      }
     }
   }
 
@@ -109,9 +193,10 @@
 
   function buildLectureFile() {
     return {
-      version: "3.0.1",
+      version: "3.5.2",
       mode: state.mode,
       active: state.active,
+      status: state.status,
       title: el.lectureTitle?.value.trim() || "",
       course_id: el.courseSelect?.value || null,
       course_name: el.courseSelect?.selectedOptions?.[0]?.textContent || "",
@@ -123,7 +208,9 @@
       timeline: state.events,
       questions: state.questions,
       highlights: state.highlights,
-      quick_summary: el.summaryText?.textContent || "",
+      transcript: state.transcript,
+      recording: state.recordingBlob ? { type: state.recordingBlob.type, size: state.recordingBlob.size } : null,
+      quick_summary: state.transcript.trim() ? (el.summaryText?.textContent || "") : "",
       saved_at: new Date().toISOString()
     };
   }
@@ -153,15 +240,38 @@
     saveLocal();
   }
 
+  function resetFinishedSession() {
+    if (state.status !== "finished") return;
+    state.startedAt = null;
+    state.events = [];
+    state.slides = [];
+    state.questions = [];
+    state.highlights = [];
+    state.slideCount = 0;
+    state.currentSlideDataUrl = null;
+    state.slideFingerprints = [];
+    state.lastFingerprint = null;
+    state.recordingChunks = [];
+    state.recordingBlob = null;
+    state.recorder = null;
+    state.transcript = "";
+    el.timer.textContent = "00:00:00";
+    renderTimeline();
+    renderHighlights();
+  }
+
   function startSession() {
-    if (state.active) {
-      toast("الجلسة تعمل بالفعل");
-      return;
-    }
+    if (state.active) return toast("الجلسة تعمل بالفعل");
+    if (state.status === "paused") return toast("استخدم زر متابعة لاستكمال الجلسة الحالية");
+    resetFinishedSession();
+    if (!clock.start()) return toast("تعذر بدء جلسة جديدة");
     state.active = true;
+    state.status = "active";
     state.startedAt = Date.now();
     el.start.textContent = "● الجلسة تعمل";
     el.start.disabled = true;
+    el.pause.disabled = false;
+    el.resume.disabled = true;
     el.statusBadge.textContent = "LIVE";
     el.statusBadge.className = "tag red";
     state.timerId = setInterval(() => {
@@ -169,7 +279,39 @@
     }, 1000);
     addEvent("session", "بدء الجلسة", `بدأت الجلسة في ${new Date().toLocaleTimeString("ar")}`, "●");
     saveLocal();
+    startRecorder();
+    startAutoCapture();
     toast("بدأت جلسة التعلم المباشر");
+  }
+
+  function pauseSession() {
+    if (!clock.pause()) return toast("لا توجد جلسة نشطة لإيقافها");
+    state.active = false;
+    state.status = "paused";
+    clearInterval(state.timerId);
+    stopAutoCapture();
+    if (state.recorder?.state === "recording") state.recorder.pause();
+    el.pause.disabled = true;
+    el.resume.disabled = false;
+    el.statusBadge.textContent = "متوقفة مؤقتًا";
+    el.statusBadge.className = "tag amber";
+    addEvent("session", "إيقاف مؤقت", "توقف التوقيت والتسجيل والالتقاط التلقائي.", "⏸");
+    saveLocal();
+  }
+
+  function resumeSession() {
+    if (!clock.resume()) return toast("لا توجد جلسة متوقفة للمتابعة");
+    state.active = true;
+    state.status = "active";
+    if (state.recorder?.state === "paused") state.recorder.resume(); else startRecorder();
+    state.timerId = setInterval(() => { el.timer.textContent = formatTime(elapsed()); }, 1000);
+    startAutoCapture();
+    el.pause.disabled = false;
+    el.resume.disabled = true;
+    el.statusBadge.textContent = "LIVE";
+    el.statusBadge.className = "tag red";
+    addEvent("session", "متابعة الجلسة", "استؤنف التوقيت والتسجيل والالتقاط.", "▶");
+    saveLocal();
   }
 
   async function shareScreen() {
@@ -178,6 +320,7 @@
       return;
     }
     try {
+      if (state.stream) controls.stopAllTracks([state.stream]);
       state.stream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: { ideal: 5, max: 10 } },
         audio: state.mode === "hybrid"
@@ -190,7 +333,11 @@
         el.captureEmpty.classList.remove("hidden");
         el.shareScreen.classList.remove("active");
         addEvent("screen", "انتهاء مشاركة الشاشة", "توقفت مشاركة الشاشة.", "■");
+        updateAudioStatus();
       });
+      startAutoCapture();
+      updateAudioStatus();
+      if (state.active) startRecorder();
       saveLocal();
       toast("تم ربط شاشة العرض");
     } catch (error) {
@@ -213,7 +360,10 @@
         el.mic.classList.remove("active");
         if (!state.stream && !state.systemAudioStream) el.captureEmpty.classList.remove("hidden");
         addEvent("audio", "توقف الميكروفون", "توقف التقاط الصوت من الميكروفون.", "■");
+        updateAudioStatus();
       });
+      updateAudioStatus();
+      await restartRecorder();
       saveLocal();
       toast("تم تفعيل الميكروفون");
     } catch (error) {
@@ -248,7 +398,10 @@
         el.systemAudio.classList.remove("active");
         if (!state.stream && !state.micStream) el.captureEmpty.classList.remove("hidden");
         addEvent("audio", "توقف صوت النظام", "توقف التقاط صوت النظام.", "■");
+        updateAudioStatus();
       });
+      updateAudioStatus();
+      await restartRecorder();
       saveLocal();
       toast("تم تفعيل صوت النظام");
     } catch (error) {
@@ -257,7 +410,7 @@
     }
   }
 
-  function captureSlide() {
+  function captureSlide(source = "manual", fingerprint = null) {
     if (!state.stream || !el.screenPreview.videoWidth) {
       toast("اختر شاشة Zoom أولًا");
       return;
@@ -271,6 +424,18 @@
     canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
 
+    if (!fingerprint) {
+      const sample = document.createElement("canvas");
+      sample.width = 160; sample.height = Math.max(90, Math.round(160 * canvas.height / canvas.width));
+      const sampleContext = sample.getContext("2d", { willReadFrequently: true });
+      sampleContext.drawImage(canvas, 0, 0, sample.width, sample.height);
+      fingerprint = controls.frameFingerprint(sampleContext.getImageData(0, 0, sample.width, sample.height).data, sample.width, sample.height);
+    }
+    if (fingerprint && source === "automatic" && state.slideFingerprints.some((saved) => !controls.isDistinctSlide(saved, fingerprint))) return false;
+    if (fingerprint) {
+      state.lastFingerprint = fingerprint;
+      state.slideFingerprints.push(fingerprint);
+    }
     state.slideCount += 1;
     state.currentSlideDataUrl = dataUrl;
     state.important = false;
@@ -290,13 +455,15 @@
       notes: "",
       important: false,
       revisited: false,
-      image_data_url: dataUrl
+      image_data_url: dataUrl,
+      capture_source: source
     };
     state.slides.push(slide);
     if (el.markRevisited) el.markRevisited.textContent = "🔁 عاد إليها المحاضر";
     addEvent("slide", `الشريحة ${state.slideCount}`, "تم حفظ لقطة من شاشة العرض.", "🖼", slide.id);
     saveLocal();
     toast(`تم حفظ الشريحة ${state.slideCount}`);
+    return true;
   }
 
   function addEvent(type, title, text, icon = "•", relatedId = null) {
@@ -398,6 +565,10 @@
   }
 
   function refreshSummary() {
+    if (!state.transcript.trim()) {
+      el.summaryText.textContent = "لا يتوفر نص حقيقي للتلخيص. احتفظ بالتسجيل واستخدم محرك تفريغ معتمد لاحقًا.";
+      return toast("لا يمكن إنشاء ملخص دون نص حقيقي");
+    }
     const notes = state.slides.map((slide) => slide.notes).filter(Boolean);
     const important = state.highlights.filter(Boolean);
     const questions = state.questions.map((item) => item.question);
@@ -463,21 +634,35 @@
     return saved;
   }
 
-  async function confirmFinish() {
-    if (!window.slcDB) return toast('اتصال قاعدة البيانات غير متاح.');
-    const title=el.lectureTitle?.value.trim();
-    const courseId=el.courseSelect?.value;
-    if (!title || !courseId) return toast('اكتب عنوان المحاضرة واختر الدورة.');
-    el.confirmFinish.disabled=true; el.confirmFinish.textContent='جاري الحفظ في المكتبة...';
-    state.active = false;
-    clearInterval(state.timerId);
-    if (state.stream) state.stream.getTracks().forEach((track) => track.stop());
+  function renderFinishedState() {
     el.statusBadge.textContent = "انتهت";
     el.statusBadge.className = "tag green";
     el.start.disabled = false;
     el.start.textContent = "● بدء جلسة جديدة";
+    el.pause.disabled = true;
+    el.resume.disabled = true;
+  }
+
+  async function confirmFinish() {
+    await finishMedia();
+    renderFinishedState();
+    const localFile = buildLectureFile();
+    try {
+      await writeStoredSession(LAST_SESSION_KEY, { ...localFile, recording_blob: state.recordingBlob });
+    } catch (_error) {
+      if (el.saveState) el.saveState.textContent = "تعذر حفظ النسخة الكاملة؛ نزّل الملفات قبل مغادرة الصفحة";
+    }
+    await deleteStoredSession(DRAFT_KEY);
+    if (state.recordingBlob) download(`smart-learning-recording-${Date.now()}.webm`, state.recordingBlob, state.recordingBlob.type);
+    if (!window.slcDB) {
+      closeFinishModal();
+      return toast("تم إنهاء الجلسة وحفظها محليًا");
+    }
+    const title=el.lectureTitle?.value.trim();
+    const courseId=el.courseSelect?.value;
+    if (!title || !courseId) return toast('اكتب عنوان المحاضرة واختر الدورة.');
+    el.confirmFinish.disabled=true; el.confirmFinish.textContent='جاري الحفظ في المكتبة...';
     refreshSummary();
-    saveLocal();
     const file=buildLectureFile();
     const {data:{user}}=await window.slcDB.auth.getUser();
     if (!user) { el.confirmFinish.disabled=false; el.confirmFinish.textContent='حفظ ملف المحاضرة'; return toast('سجّل الدخول أولًا.'); }
@@ -487,13 +672,124 @@
     await window.slcDB.from('slc_lectures').update({live_payload:{...file,slides,slides_count:slides.length}}).eq('id',lecture.id);
     if(file.quick_summary && file.quick_summary.length>20) await window.slcDB.from('slc_summaries').upsert({owner_id:user.id,course_id:courseId,lecture_id:lecture.id,summary_key:`lecture:${lecture.id}`,summary_html:file.quick_summary,updated_at:new Date().toISOString()},{onConflict:'summary_key'});
     localStorage.setItem('slc_current_course_id',courseId);localStorage.setItem('slc_current_lecture_id',lecture.id);
-    localStorage.removeItem('slc_live_studio_draft_v301');
+    localStorage.removeItem(DRAFT_KEY);
     el.confirmFinish.disabled=false; el.confirmFinish.textContent='حفظ ملف المحاضرة'; closeFinishModal();
     toast("تم حفظ المحاضرة المباشرة في المكتبة");
   }
 
+  function audioTracks() {
+    return [state.stream, state.micStream, state.systemAudioStream]
+      .filter(Boolean).flatMap((stream) => stream.getAudioTracks()).filter((track) => track.readyState === "live");
+  }
+
+  function updateAudioStatus() {
+    const connected = audioTracks().length > 0;
+    el.audioStatus.textContent = connected ? "الصوت متصل" : "الصوت غير متصل";
+    el.audioStatus.classList.toggle("connected", connected);
+  }
+
+  async function stopRecorder() {
+    if (!state.recorder || state.recorder.state === "inactive") return;
+    await new Promise((resolve) => {
+      state.recorder.addEventListener("stop", resolve, { once: true });
+      state.recorder.stop();
+    });
+    if (state.recordingChunks.length) {
+      state.recordingBlob = new Blob(state.recordingChunks, { type: state.recorder.mimeType || "audio/webm" });
+    }
+  }
+
+  async function restartRecorder() {
+    if (!state.active) return;
+    await stopRecorder();
+    startRecorder();
+  }
+
+  function startRecorder() {
+    if (!state.active || ["recording", "paused"].includes(state.recorder?.state) || typeof MediaRecorder === "undefined") return;
+    const tracks = audioTracks();
+    updateAudioStatus();
+    if (!tracks.length) return;
+    try {
+      state.recorder = new MediaRecorder(new MediaStream(tracks));
+      state.recorder.ondataavailable = (event) => { if (event.data.size) state.recordingChunks.push(event.data); };
+      state.recorder.onstop = () => {
+        if (state.recordingChunks.length) state.recordingBlob = new Blob(state.recordingChunks, { type: state.recorder.mimeType || "audio/webm" });
+      };
+      state.recorder.start(1000);
+    } catch (error) {
+      console.error(error);
+      updateAudioStatus();
+    }
+  }
+
+  function stopAutoCapture() {
+    clearInterval(state.autoCaptureId);
+    state.autoCaptureId = null;
+  }
+
+  function startAutoCapture() {
+    stopAutoCapture();
+    if (!state.active || !state.stream) return;
+    state.autoCaptureId = setInterval(() => {
+      const video = el.screenPreview;
+      if (!video.videoWidth || !state.active) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = 160; canvas.height = Math.max(90, Math.round(160 * video.videoHeight / video.videoWidth));
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const fingerprint = controls.frameFingerprint(context.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+      if (controls.isDistinctSlide(state.lastFingerprint, fingerprint, 0.12)) captureSlide("automatic", fingerprint);
+    }, 4000);
+  }
+
+  async function finishMedia() {
+    clock.finish();
+    state.active = false;
+    state.status = "finished";
+    clearInterval(state.timerId);
+    stopAutoCapture();
+    await stopRecorder();
+    controls.stopAllTracks([state.stream, state.micStream, state.systemAudioStream]);
+    state.stream = null; state.micStream = null; state.systemAudioStream = null;
+    el.screenPreview.srcObject = null;
+    updateAudioStatus();
+  }
+
+  async function restoreDraft() {
+    let draft = null;
+    try {
+      draft = await readStoredSession(DRAFT_KEY);
+    } catch (_error) {
+      draft = controls.recoverDraft(localStorage, DRAFT_KEY);
+    }
+    if (!draft || (!draft.active && draft.status !== "paused")) return;
+    state.mode = draft.mode || "audio";
+    state.status = "paused";
+    state.slides = draft.slides || [];
+    state.events = draft.timeline || [];
+    state.questions = draft.questions || [];
+    state.highlights = draft.highlights || [];
+    state.slideCount = state.slides.length;
+    clock.restore(draft);
+    el.timer.textContent = formatTime(elapsed());
+    el.start.disabled = true;
+    el.resume.disabled = false;
+    el.statusBadge.textContent = "مسودة مستعادة — متوقفة";
+    el.statusBadge.className = "tag amber";
+    renderTimeline(); renderHighlights();
+    toast("تمت استعادة الجلسة المؤقتة؛ أعد توصيل مصادر الوسائط ثم تابع");
+  }
+
+  window.addEventListener("beforeunload", (event) => {
+    if (state.status !== "active" && state.status !== "paused") return;
+    saveLocal();
+    event.preventDefault();
+    event.returnValue = "";
+  });
+
   function download(filename, content, type) {
-    const blob = new Blob([content], { type });
+    const blob = content instanceof Blob ? content : new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -535,10 +831,13 @@
     if (button) switchMode(button.dataset.captureMode);
   });
   el.start?.addEventListener("click", startSession);
+  el.pause?.addEventListener("click", pauseSession);
+  el.resume?.addEventListener("click", resumeSession);
   el.shareScreen?.addEventListener("click", shareScreen);
+  el.reselectScreen?.addEventListener("click", shareScreen);
   el.mic?.addEventListener("click", startMic);
   el.systemAudio?.addEventListener("click", startSystemAudio);
-  el.captureSlide?.addEventListener("click", captureSlide);
+  el.captureSlide?.addEventListener("click", () => captureSlide("manual"));
   el.markImportant?.addEventListener("click", markImportant);
   el.markRevisited?.addEventListener("click", markRevisited);
   el.saveSlideCard?.addEventListener("click", saveSlideCard);
@@ -563,4 +862,6 @@
   el.captureSlide.disabled = true;
   renderTimeline();
   renderHighlights();
+  updateAudioStatus();
+  restoreDraft();
 })();

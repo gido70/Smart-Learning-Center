@@ -27,5 +27,13 @@ jobs:
       - name: Run smoke test
         run: python tests/smoke_test.py
 
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/modules/live-learning/session-controls.js
+          node --check assets/js/live-studio.js
+
+      - name: Test live session controls
+        run: node tests/live_session_controls_test.js
+
       - name: Check release
         run: python scripts/check_release.py
