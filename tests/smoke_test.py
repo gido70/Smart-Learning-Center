@@ -17,6 +17,12 @@ for token in ['addLectureBtn','lectureModal','lectureEditingId','editCurrentLect
     if token not in index: errors.append(f'بوابة المحاضرات مفقودة: {token}')
 for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js','liveAiCompanion','aiToggleListeningBtn','aiAnalyzeSlideBtn','aiSuggestionList','aiSlideSuggestionList','aiSpeechSuggestionList','exitFullscreenPreviewBtn','finish-live-scroll','live-interaction-assistant.js']:
     if token not in index: errors.append(f'تحكم الجلسة المباشرة مفقود: {token}')
+live_studio=(root/'assets/js/live-studio.js').read_text(encoding='utf-8')
+assistant=(root/'src/modules/live-learning/live-interaction-assistant.js').read_text(encoding='utf-8')
+for token in ['clearCompletedWorkspace','SLCLiveInteractionAssistant?.endSession?.()','restoreSession?.(draft.interaction_assistant']:
+    if token not in live_studio: errors.append(f'تنظيف الجلسة المباشرة مفقود: {token}')
+for token in ['localStorage.removeItem(STORAGE_KEY)','restoreSession','endSession']:
+    if token not in assistant: errors.append(f'عزل مساعد الجلسة مفقود: {token}')
 if errors:
     print('SMOKE TEST FAILED')
     print('\n'.join(errors))

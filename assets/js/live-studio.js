@@ -277,9 +277,32 @@
     state.recordingBlob = null;
     state.recorder = null;
     state.transcript = "";
+    window.SLCLiveInteractionAssistant?.endSession?.();
     el.timer.textContent = "00:00:00";
     renderTimeline();
     renderHighlights();
+  }
+
+  async function clearCompletedWorkspace() {
+    await deleteStoredSession(DRAFT_KEY);
+    resetFinishedSession();
+    state.status = "idle";
+    state.active = false;
+    if (el.lectureTitle) el.lectureTitle.value = "";
+    if (el.recordingUrl) el.recordingUrl.value = "";
+    if (el.lectureOrder) el.lectureOrder.value = "";
+    if (el.courseSelect) el.courseSelect.value = "";
+    if (el.slideTitle) el.slideTitle.value = "";
+    if (el.slideNotes) el.slideNotes.value = "";
+    if (el.slideThumb) el.slideThumb.innerHTML = "<span>ستظهر آخر شريحة محفوظة هنا.</span>";
+    el.start.disabled = false;
+    el.start.textContent = "● بدء جلسة جديدة";
+    el.pause.disabled = true;
+    el.resume.disabled = true;
+    el.statusBadge.textContent = "غير متصل";
+    el.statusBadge.className = "tag red";
+    if (el.saveState) el.saveState.textContent = "● جاهز لجلسة جديدة";
+    syncSessionActionButtons();
   }
 
   function startSession() {
@@ -706,6 +729,7 @@
     if (state.recordingBlob) download(`smart-learning-recording-${Date.now()}.webm`, state.recordingBlob, state.recordingBlob.type);
     if (!window.slcDB) {
       setFinishBusy(false);
+      await clearCompletedWorkspace();
       closeFinishAndResetView("تم إنهاء الجلسة وحفظها محليًا");
       return;
     }
@@ -721,6 +745,7 @@
     localStorage.setItem('slc_current_course_id',courseId);localStorage.setItem('slc_current_lecture_id',lecture.id);
     localStorage.removeItem(DRAFT_KEY);
     setFinishBusy(false);
+    await clearCompletedWorkspace();
     closeFinishAndResetView("تم حفظ المحاضرة المباشرة في المكتبة");
     } catch (error) {
       console.error(error);
@@ -914,6 +939,7 @@
     state.events = draft.timeline || [];
     state.questions = draft.questions || [];
     state.highlights = draft.highlights || [];
+    window.SLCLiveInteractionAssistant?.restoreSession?.(draft.interaction_assistant || {});
     state.slideCount = state.slides.length;
     clock.restore(draft);
     el.timer.textContent = formatTime(elapsed());
