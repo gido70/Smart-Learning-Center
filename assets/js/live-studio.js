@@ -141,6 +141,7 @@
     zoomOut: $("zoomOutPreviewBtn"),
     fitPreview: $("fitPreviewBtn"),
     fullscreenPreview: $("fullscreenPreviewBtn"),
+    exitFullscreenPreview: $("exitFullscreenPreviewBtn"),
     saveDraft: $("saveLiveDraftBtn"),
     discardSession: $("discardLiveSessionBtn"),
     slideViewerModal: $("slideViewerModal"),
@@ -634,6 +635,20 @@
     el.finishModal.setAttribute("aria-hidden", "true");
   }
 
+  function closeFinishAndResetView(message) {
+    closeFinishModal();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    el.finishModal?.querySelector(".finish-live-scroll")?.scrollTo({ top: 0 });
+    if (message) toast(message);
+  }
+
+  function setFinishBusy(busy, label = "حفظ كمحاضرة مكتملة") {
+    [el.confirmFinish, el.saveDraft, el.discardSession, el.closeFinishModal].forEach((button) => {
+      if (button) button.disabled = busy;
+    });
+    if (el.confirmFinish) el.confirmFinish.textContent = busy ? "جاري الحفظ..." : label;
+  }
+
   function dataUrlToBlob(dataUrl) {
     const [header, body] = dataUrl.split(',');
     const mime = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
@@ -674,6 +689,11 @@
   }
 
   async function confirmFinish() {
+    const title=el.lectureTitle?.value.trim();
+    const courseId=el.courseSelect?.value;
+    if (window.slcDB && (!title || !courseId)) return toast('اكتب عنوان المحاضرة واختر الدورة.');
+    setFinishBusy(true);
+    try {
     await finishMedia();
     renderFinishedState();
     const localFile = buildLectureFile();
@@ -685,26 +705,28 @@
     await deleteStoredSession(DRAFT_KEY);
     if (state.recordingBlob) download(`smart-learning-recording-${Date.now()}.webm`, state.recordingBlob, state.recordingBlob.type);
     if (!window.slcDB) {
-      closeFinishModal();
-      return toast("تم إنهاء الجلسة وحفظها محليًا");
+      setFinishBusy(false);
+      closeFinishAndResetView("تم إنهاء الجلسة وحفظها محليًا");
+      return;
     }
-    const title=el.lectureTitle?.value.trim();
-    const courseId=el.courseSelect?.value;
-    if (!title || !courseId) return toast('اكتب عنوان المحاضرة واختر الدورة.');
-    el.confirmFinish.disabled=true; el.confirmFinish.textContent='جاري الحفظ في المكتبة...';
     refreshSummary();
     const file=buildLectureFile();
     const {data:{user}}=await window.slcDB.auth.getUser();
-    if (!user) { el.confirmFinish.disabled=false; el.confirmFinish.textContent='حفظ ملف المحاضرة'; return toast('سجّل الدخول أولًا.'); }
+    if (!user) { setFinishBusy(false); return toast('سجّل الدخول أولًا.'); }
     const {data:lecture,error}=await window.slcDB.from('slc_lectures').insert({owner_id:user.id,course_id:courseId,title,source_url:file.recording_url||null,source_type:'live',open_mode:file.recording_url?'external':'auto',module_name:'محاضرة مباشرة',lecture_order:file.lecture_order,duration_minutes:Math.max(1,Math.round(file.duration_seconds/60)),status:'completed',session_kind:'live',notes:file.highlights.join('\n'),archived_at:new Date().toISOString(),live_payload:{mode:file.mode,started_at:file.started_at,duration_seconds:file.duration_seconds,timeline:file.timeline,questions:file.questions,highlights:file.highlights,quick_summary:file.quick_summary}}).select('id').single();
-    if(error){el.confirmFinish.disabled=false;el.confirmFinish.textContent='حفظ ملف المحاضرة';return toast(`تعذر حفظ المحاضرة: ${error.message}`);}
+    if(error){setFinishBusy(false);return toast(`تعذر حفظ المحاضرة: ${error.message}`);}
     const slides=await uploadSlides(user.id,lecture.id);
     await window.slcDB.from('slc_lectures').update({live_payload:{...file,slides,slides_count:slides.length}}).eq('id',lecture.id);
     if(file.quick_summary && file.quick_summary.length>20) await window.slcDB.from('slc_summaries').upsert({owner_id:user.id,course_id:courseId,lecture_id:lecture.id,summary_key:`lecture:${lecture.id}`,summary_html:file.quick_summary,updated_at:new Date().toISOString()},{onConflict:'summary_key'});
     localStorage.setItem('slc_current_course_id',courseId);localStorage.setItem('slc_current_lecture_id',lecture.id);
     localStorage.removeItem(DRAFT_KEY);
-    el.confirmFinish.disabled=false; el.confirmFinish.textContent='حفظ ملف المحاضرة'; closeFinishModal();
-    toast("تم حفظ المحاضرة المباشرة في المكتبة");
+    setFinishBusy(false);
+    closeFinishAndResetView("تم حفظ المحاضرة المباشرة في المكتبة");
+    } catch (error) {
+      console.error(error);
+      setFinishBusy(false);
+      toast("تعذر إكمال الحفظ. بقيت الجلسة محفوظة محليًا ويمكن إعادة المحاولة.");
+    }
   }
 
   function audioTracks() {
@@ -768,6 +790,7 @@
   function startAutoCapture() {
     stopAutoCapture();
     if (!state.active || !state.stream) return;
+    let unchangedChecks = 0;
     state.autoCaptureId = setInterval(() => {
       const video = el.screenPreview;
       if (!video.videoWidth || !state.active) return;
@@ -776,7 +799,13 @@
       const context = canvas.getContext("2d", { willReadFrequently: true });
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const fingerprint = controls.frameFingerprint(context.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
-      if (controls.isDistinctSlide(state.lastFingerprint, fingerprint, 0.12)) captureSlide("automatic", fingerprint);
+      if (controls.isDistinctSlide(state.lastFingerprint, fingerprint, 0.075)) {
+        unchangedChecks = 0;
+        captureSlide("automatic", fingerprint);
+      } else {
+        unchangedChecks += 1;
+        if (unchangedChecks === 30 && el.audioStatus) el.audioStatus.textContent = "الصورة لم تتغير منذ دقيقتين — تحقق من أن نافذة العرض ما زالت مشتركة";
+      }
     }, 4000);
   }
 
@@ -811,21 +840,28 @@
   }
 
   async function keepSessionAsDraft() {
+    setFinishBusy(true);
+    try {
     await finishMedia();
     state.status = "draft";
     await writeStoredSession(DRAFT_KEY, buildLectureFile()).catch(() => saveLocal());
-    closeFinishModal();
     renderFinishedState();
     el.statusBadge.textContent = "محفوظة كمسودة";
     el.statusBadge.className = "tag amber";
-    toast("تم الاحتفاظ بالجلسة كمسودة للمراجعة");
+    setFinishBusy(false);
+    closeFinishAndResetView("تم الاحتفاظ بالجلسة كمسودة للمراجعة");
+    } catch (error) {
+      console.error(error);
+      setFinishBusy(false);
+      toast("تعذر إغلاق المسودة، لكن بيانات الجلسة المحلية لم تُحذف.");
+    }
   }
 
   async function discardCurrentSession() {
     if (!window.confirm("هل تريد حذف هذه الجلسة غير المعتمدة نهائيًا؟ لن تُحذف محاضرات المكتبة.")) return;
     await finishMedia();
     await deleteStoredSession(DRAFT_KEY);
-    closeFinishModal();
+    closeFinishAndResetView();
     resetFinishedSession();
     state.status = "idle";
     renderFinishedState();
@@ -992,6 +1028,11 @@
   el.zoomOut?.addEventListener("click", () => setPreviewScale(previewScale - 0.15));
   el.fitPreview?.addEventListener("click", () => setPreviewScale(1));
   el.fullscreenPreview?.addEventListener("click", () => el.screen?.requestFullscreen?.());
+  el.exitFullscreenPreview?.addEventListener("click", () => document.exitFullscreen?.());
+  document.addEventListener("fullscreenchange", () => {
+    el.exitFullscreenPreview?.classList.toggle("hidden", document.fullscreenElement !== el.screen);
+    if (el.fullscreenPreview) el.fullscreenPreview.classList.toggle("hidden", document.fullscreenElement === el.screen);
+  });
   el.timeline?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-event-id]");
     if (!button) return;
