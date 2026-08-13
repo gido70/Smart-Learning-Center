@@ -84,7 +84,8 @@
     recorder: null,
     recordingChunks: [],
     recordingBlob: null,
-    transcript: ""
+    transcript: "",
+    replacingScreen: false
   };
 
   const el = {
@@ -340,6 +341,7 @@
       return;
     }
     try {
+      state.replacingScreen = Boolean(state.stream);
       if (state.stream) controls.stopAllTracks([state.stream]);
       state.stream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: { ideal: 5, max: 10 } },
@@ -349,7 +351,9 @@
       el.captureEmpty.classList.add("hidden");
       el.shareScreen.classList.add("active");
       addEvent("screen", "بدء مشاركة الشاشة", "تم اختيار نافذة أو شاشة للعرض التقديمي.", "🖥");
+      state.replacingScreen = false;
       state.stream.getVideoTracks()[0]?.addEventListener("ended", async () => {
+        if (state.replacingScreen) return;
         el.captureEmpty.classList.remove("hidden");
         el.shareScreen.classList.remove("active");
         addEvent("screen", "انتهاء مشاركة الشاشة", "توقفت مشاركة الشاشة؛ حُفظت الجلسة كمسودة للمراجعة.", "■");
@@ -361,6 +365,7 @@
       saveLocal();
       toast("تم ربط شاشة العرض");
     } catch (error) {
+      state.replacingScreen = false;
       if (error.name !== "NotAllowedError") console.error(error);
       toast("لم يتم اختيار شاشة العرض");
     }
@@ -792,6 +797,7 @@
     }
     await finishMedia();
     state.status = "draft";
+    syncSessionActionButtons();
     await writeStoredSession(DRAFT_KEY, buildLectureFile()).catch(() => saveLocal());
     el.statusBadge.textContent = "مسودة — انتهت مشاركة الشاشة";
     el.statusBadge.className = "tag amber";
