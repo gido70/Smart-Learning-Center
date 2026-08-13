@@ -210,6 +210,8 @@
   }
 
   function buildLectureFile() {
+    const interactionAssistant = window.SLCLiveInteractionAssistant?.exportData?.() || null;
+    const combinedTranscript = [state.transcript, interactionAssistant?.transcript].filter(Boolean).join(" ").trim();
     return {
       version: "3.5.2",
       mode: state.mode,
@@ -226,9 +228,10 @@
       timeline: state.events,
       questions: state.questions,
       highlights: state.highlights,
-      transcript: state.transcript,
+      transcript: combinedTranscript,
+      interaction_assistant: interactionAssistant,
       recording: state.recordingBlob ? { type: state.recordingBlob.type, size: state.recordingBlob.size } : null,
-      quick_summary: state.transcript.trim() ? (el.summaryText?.textContent || "") : "",
+      quick_summary: combinedTranscript ? (el.summaryText?.textContent || "") : "",
       saved_at: new Date().toISOString()
     };
   }
@@ -928,6 +931,30 @@
     ];
     download(`smart-learning-live-${Date.now()}.txt`, lines.join("\n"), "text/plain;charset=utf-8");
   }
+
+  window.addEventListener("slc:assistant-save-suggestion", (event) => {
+    const item = event.detail;
+    if (!item?.text) return;
+    const alreadySaved = state.events.some((entry) => entry.assistant_id === item.id);
+    if (alreadySaved) return;
+    if (item.type === "question") {
+      state.questions.push({
+        question: item.text,
+        at_seconds: item.at_seconds ?? elapsed(),
+        slide_id: null,
+        source: item.source || "assistant",
+        assistant_id: item.id
+      });
+      addEvent("question", "سؤال مقترح محفوظ", item.text, "❓");
+    } else {
+      state.highlights.push(item.text);
+      addEvent("important", "مداخلة مقترحة محفوظة", item.text, "💡");
+      renderHighlights();
+    }
+    const lastEvent = state.events[state.events.length - 1];
+    if (lastEvent) lastEvent.assistant_id = item.id;
+    saveLocal();
+  });
 
   el.modeSwitch?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-capture-mode]");
