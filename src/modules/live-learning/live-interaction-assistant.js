@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = "slc_live_interaction_assistant_v1";
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const MAX_RECOMMENDED = 8;
   const state = {
     recognition: null,
     listening: false,
@@ -62,13 +63,24 @@
     return words.slice(0, 7).join(" ") || compactText(text, 70);
   }
 
+  function usefulnessScore(text, source) {
+    const cleaned = compactText(text, 600);
+    let score = source === "slide" ? 2 : 0;
+    if (/كيف|لماذا|تطبيق|مثال|نتيجة|مشكلة|حل|مقارنة|فرق|شرط|خطر|أثر|منهج|إطار|how|why|example|result|risk|method/i.test(cleaned)) score += 2;
+    if (/\d|%|٪|[A-Za-z]{3,}/.test(cleaned)) score += 1;
+    if (cleaned.length > 90) score += 1;
+    return score;
+  }
+
   function buildSuggestions(text, source, slideNumber = null) {
     if (!meaningfulText(text)) return;
     const excerpt = compactText(text, 260);
     const focus = focusPhrase(excerpt);
     state.lastSuggestionText = excerpt;
     const at = nowSeconds();
-    const common = { at_seconds: at, source, slide_number: slideNumber, excerpt, status: "new" };
+    const score = usefulnessScore(excerpt, source);
+    if (score < 3) return;
+    const common = { at_seconds: at, source, slide_number: slideNumber, excerpt, status: "new", score };
 
     addSuggestion({
       ...common,
@@ -77,7 +89,7 @@
       text: `ما المقصود بـ «${focus}»؟ وما المثال العملي الذي يوضح أثره أو طريقة تطبيقه؟`
     });
 
-    if (excerpt.length > 80) {
+    if (score >= 5 && excerpt.length > 100) {
       addSuggestion({
         ...common,
         type: "intervention",
@@ -97,7 +109,7 @@
       created_at: new Date().toISOString(),
       ...item
     });
-    state.suggestions = state.suggestions.slice(-60);
+    state.suggestions = state.suggestions.slice(-30);
     save();
     render();
   }
@@ -109,6 +121,16 @@
     node.className = `tag ${tone}`.trim();
   }
 
+  function renderCards(items) {
+    if (!items.length) return '<div class="ai-suggestion-empty">لا يوجد اقتراح قوي من هذا المصدر بعد.</div>';
+    return items.map((item) => `
+      <article class="ai-suggestion-card ${item.type} ${item.status === "saved" ? "saved" : ""}" data-ai-id="${item.id}">
+        <div class="ai-suggestion-head"><strong>${item.type === "question" ? "❓" : "💡"} ${escapeHtml(item.title)}</strong><small>${formatTime(item.at_seconds)}${item.slide_number ? ` · شريحة ${item.slide_number}` : ""}</small></div>
+        <p>${escapeHtml(item.text)}</p><details><summary>المصدر</summary><small>${escapeHtml(item.excerpt)}</small></details>
+        <div class="ai-suggestion-actions"><button data-ai-action="save">${item.status === "saved" ? "✓ محفوظة" : "حفظ للمناقشة"}</button><button data-ai-action="copy">نسخ</button><button data-ai-action="dismiss">استبعاد</button></div>
+      </article>`).join("");
+  }
+
   function render() {
     const transcript = $("aiLiveTranscript");
     if (transcript) {
@@ -116,27 +138,13 @@
         ? `${state.transcript}${state.interim ? ` ${state.interim}` : ""}`
         : "سيظهر التفريغ هنا بعد تشغيل الاستماع.";
     }
-    const list = $("aiSuggestionList");
-    if (!list) return;
-    if (!state.suggestions.length) {
-      list.innerHTML = '<div class="ai-suggestion-empty">لم تظهر مقترحات بعد. شغّل الاستماع أو حلّل الشريحة الحالية.</div>';
-      return;
-    }
-    list.innerHTML = state.suggestions.slice().reverse().map((item) => `
-      <article class="ai-suggestion-card ${item.type} ${item.status === "saved" ? "saved" : ""}" data-ai-id="${item.id}">
-        <div class="ai-suggestion-head">
-          <strong>${item.type === "question" ? "❓" : "💡"} ${escapeHtml(item.title)}</strong>
-          <small>${formatTime(item.at_seconds)}${item.slide_number ? ` · شريحة ${item.slide_number}` : ""}</small>
-        </div>
-        <p>${escapeHtml(item.text)}</p>
-        <details><summary>المقطع الذي بُني عليه الاقتراح</summary><small>${escapeHtml(item.excerpt)}</small></details>
-        <div class="ai-suggestion-actions">
-          <button data-ai-action="save">${item.status === "saved" ? "✓ محفوظة" : "حفظ للمناقشة"}</button>
-          <button data-ai-action="copy">نسخ</button>
-          <button data-ai-action="dismiss">استبعاد</button>
-        </div>
-      </article>
-    `).join("");
+    const sorted = state.suggestions.slice().sort((a,b) => (b.score || 0) - (a.score || 0));
+    const slides = sorted.filter((item) => item.source === "slide").slice(0, MAX_RECOMMENDED);
+    const speech = sorted.filter((item) => item.source === "speech").slice(0, MAX_RECOMMENDED);
+    const best = sorted.filter((item) => (item.score || 0) >= 5 || item.status === "saved").slice(0, 5);
+    if ($("aiSlideSuggestionList")) $("aiSlideSuggestionList").innerHTML = renderCards(slides);
+    if ($("aiSpeechSuggestionList")) $("aiSpeechSuggestionList").innerHTML = renderCards(speech);
+    if ($("aiSuggestionList")) $("aiSuggestionList").innerHTML = renderCards(best);
   }
 
   function formatTime(seconds) {
@@ -151,7 +159,7 @@
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 3;
     recognition.lang = $("aiSpeechLanguage")?.value || "ar-SA";
     recognition.onstart = () => {
       state.listening = true;
