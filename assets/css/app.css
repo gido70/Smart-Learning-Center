@@ -48,3 +48,26 @@
 .slide-viewer-image img{max-width:100%;height:auto;display:block;margin:auto}
 .slide-viewer-actions{display:flex;justify-content:center;gap:12px;margin-top:14px}
 @media(max-width:900px){.live-head-actions{position:static}.preview-toolbar{position:relative;top:auto;left:auto;margin-bottom:8px}.presentation-capture{min-height:300px}.live-head-actions .btn{width:100%}}
+
+
+/* Live interaction assistant */
+.live-ai-companion{border:1px solid #bfe8e1;background:linear-gradient(180deg,#ffffff,#f3fbf9)}
+.ai-companion-controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.ai-companion-controls select{border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px 12px;font-family:inherit}
+.ai-privacy-note{font-size:10px;color:var(--muted);line-height:1.7;background:#f5f8f9;border-radius:9px;padding:9px}
+.ai-live-transcript{max-height:145px;overflow:auto;white-space:pre-wrap;line-height:1.9;background:#0b2a30;color:#e2f5f2;border-radius:12px;padding:12px;margin:10px 0;font-size:12px}
+.ai-suggestion-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:13px 0 8px}
+.ai-suggestion-title small{color:var(--muted);font-size:10px}
+.ai-suggestion-list{display:flex;flex-direction:column;gap:9px;max-height:430px;overflow:auto}
+.ai-suggestion-empty{padding:18px;text-align:center;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:11px}
+.ai-suggestion-card{border:1px solid var(--line);border-right:4px solid #7c3aed;border-radius:11px;padding:10px;background:#fff}
+.ai-suggestion-card.intervention{border-right-color:#0f766e}
+.ai-suggestion-card.saved{background:#ecfdf5;border-color:#86d8c8}
+.ai-suggestion-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.ai-suggestion-head small{direction:ltr;color:var(--muted);font-size:9px}
+.ai-suggestion-card p{margin:8px 0;line-height:1.8;font-size:12px}
+.ai-suggestion-card details{color:var(--muted);font-size:10px;margin-bottom:8px}
+.ai-suggestion-card summary{cursor:pointer}
+.ai-suggestion-actions{display:flex;gap:6px;flex-wrap:wrap}
+.ai-suggestion-actions button{border:1px solid var(--line);background:#f8fbfb;color:#0f766e;border-radius:8px;padding:6px 9px;cursor:pointer;font-size:10px}
+@media(max-width:700px){.ai-companion-controls>*{width:100%}.ai-suggestion-title{align-items:flex-start;flex-direction:column}}

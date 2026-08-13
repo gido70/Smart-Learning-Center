@@ -276,6 +276,32 @@
               </ul>
             </article>
 
+            <article class="panel live-ai-companion" id="liveAiCompanion">
+              <div class="panel-head">
+                <div>
+                  <h3>✦ مساعد المحاضرة والتفاعل</h3>
+                  <small class="muted-note">يحوّل الحديث إلى نص، ويقرأ الشرائح، ويقترح أسئلة ومداخلات مكتوبة للمناقشة.</small>
+                </div>
+                <span class="tag green" id="aiCompanionStatus">جاهز</span>
+              </div>
+              <div class="ai-companion-controls">
+                <button class="btn primary" id="aiToggleListeningBtn">🎧 تشغيل الاستماع والتفريغ</button>
+                <select id="aiSpeechLanguage" aria-label="لغة التفريغ">
+                  <option value="ar-SA">العربية</option>
+                  <option value="en-US">English</option>
+                </select>
+                <button class="btn soft" id="aiAnalyzeSlideBtn">🖼 تحليل الشريحة الحالية</button>
+                <button class="btn ghost" id="aiClearAssistantBtn">مسح جلسة المساعد</button>
+              </div>
+              <p class="ai-privacy-note">التفريغ المباشر يستخدم خدمة التعرف على الكلام المتاحة في Chrome/Edge بعد موافقتك على الميكروفون. تحليل الشرائح يعمل داخل المتصفح ولا يحتاج مفتاحًا سريًا.</p>
+              <div class="ai-live-transcript" id="aiLiveTranscript">سيظهر التفريغ هنا بعد تشغيل الاستماع.</div>
+              <div class="ai-suggestion-title">
+                <strong>أسئلة ومداخلات مقترحة</strong>
+                <small>احفظ المناسب للمناقشة، أو انسخه، أو استبعده.</small>
+              </div>
+              <div class="ai-suggestion-list" id="aiSuggestionList"></div>
+            </article>
+
             <article class="panel">
               <div class="panel-head"><h3>اسأل أثناء المحاضرة</h3></div>
               <div class="chat-mini">
@@ -452,7 +478,9 @@
   <script src="assets/js/app.js?v=3.5.2"></script>
   <script src="assets/js/supabase-integration.js?v=3.5.2"></script>
   <script src="src/modules/live-learning/session-controls.js?v=3.5.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="assets/js/live-studio.js?v=3.5.2"></script>
+  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.5.2"></script>
   <script src="assets/js/workspace.js?v=3.5.2"></script>
   <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.2"></script>
   <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.2"></script>

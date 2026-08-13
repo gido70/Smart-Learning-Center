@@ -15,7 +15,7 @@ for token in ['watchInsideBtn','watchOutsideBtn','savePointBtn','lessonNotes','q
 if 'dir="rtl"' not in index: errors.append('دعم RTL مفقود')
 for token in ['addLectureBtn','lectureModal','lectureEditingId','editCurrentLectureBtn','deleteCurrentLectureBtn','localSummarizeBtn','notebookLmExportBtn','lecture-portal.js','lecture-summarizer.js','course-series.js','liveCourseSelect','courseFilters','courseSearchInput']:
     if token not in index: errors.append(f'بوابة المحاضرات مفقودة: {token}')
-for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js']:
+for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js','liveAiCompanion','aiToggleListeningBtn','aiAnalyzeSlideBtn','aiSuggestionList','live-interaction-assistant.js']:
     if token not in index: errors.append(f'تحكم الجلسة المباشرة مفقود: {token}')
 if errors:
     print('SMOKE TEST FAILED')

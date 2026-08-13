@@ -210,6 +210,8 @@
   }
 
   function buildLectureFile() {
+    const interactionAssistant = window.SLCLiveInteractionAssistant?.exportData?.() || null;
+    const combinedTranscript = [state.transcript, interactionAssistant?.transcript].filter(Boolean).join(" ").trim();
     return {
       version: "3.5.2",
       mode: state.mode,
@@ -226,9 +228,10 @@
       timeline: state.events,
       questions: state.questions,
       highlights: state.highlights,
-      transcript: state.transcript,
+      transcript: combinedTranscript,
+      interaction_assistant: interactionAssistant,
       recording: state.recordingBlob ? { type: state.recordingBlob.type, size: state.recordingBlob.size } : null,
-      quick_summary: state.transcript.trim() ? (el.summaryText?.textContent || "") : "",
+      quick_summary: combinedTranscript ? (el.summaryText?.textContent || "") : "",
       saved_at: new Date().toISOString()
     };
   }
@@ -282,6 +285,7 @@
     if (state.active) return toast("الجلسة تعمل بالفعل");
     if (state.status === "paused") return toast("استخدم زر متابعة لاستكمال الجلسة الحالية");
     resetFinishedSession();
+    window.SLCLiveInteractionAssistant?.beginSession?.();
     if (!clock.start()) return toast("تعذر بدء جلسة جديدة");
     state.active = true;
     state.status = "active";
@@ -777,6 +781,7 @@
   }
 
   async function finishMedia() {
+    window.SLCLiveInteractionAssistant?.stopListening?.();
     clock.finish();
     state.active = false;
     state.status = "finished";
@@ -831,8 +836,8 @@
 
   function syncSessionActionButtons() {
     const canFinish = ["active", "paused", "draft"].includes(state.status);
-    $("[data-live-finish]").forEach((button) => { button.disabled = !canFinish; });
-    $("[data-live-cancel]").forEach((button) => { button.disabled = !canFinish; });
+    $$("[data-live-finish]").forEach((button) => { button.disabled = !canFinish; });
+    $$("[data-live-cancel]").forEach((button) => { button.disabled = !canFinish; });
   }
 
   function setPreviewScale(value) {
@@ -929,6 +934,30 @@
     download(`smart-learning-live-${Date.now()}.txt`, lines.join("\n"), "text/plain;charset=utf-8");
   }
 
+  window.addEventListener("slc:assistant-save-suggestion", (event) => {
+    const item = event.detail;
+    if (!item?.text) return;
+    const alreadySaved = state.events.some((entry) => entry.assistant_id === item.id);
+    if (alreadySaved) return;
+    if (item.type === "question") {
+      state.questions.push({
+        question: item.text,
+        at_seconds: item.at_seconds ?? elapsed(),
+        slide_id: null,
+        source: item.source || "assistant",
+        assistant_id: item.id
+      });
+      addEvent("question", "سؤال مقترح محفوظ", item.text, "❓");
+    } else {
+      state.highlights.push(item.text);
+      addEvent("important", "مداخلة مقترحة محفوظة", item.text, "💡");
+      renderHighlights();
+    }
+    const lastEvent = state.events[state.events.length - 1];
+    if (lastEvent) lastEvent.assistant_id = item.id;
+    saveLocal();
+  });
+
   el.modeSwitch?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-capture-mode]");
     if (button) switchMode(button.dataset.captureMode);
@@ -948,8 +977,8 @@
   el.questionBtn?.addEventListener("click", saveQuestion);
   el.question?.addEventListener("keydown", (event) => { if (event.key === "Enter") saveQuestion(); });
   el.finish?.addEventListener("click", openFinishModal);
-  $("[data-live-finish]").forEach((button) => button.addEventListener("click", openFinishModal));
-  $("[data-live-cancel]").forEach((button) => button.addEventListener("click", discardCurrentSession));
+  $$("[data-live-finish]").forEach((button) => button.addEventListener("click", openFinishModal));
+  $$("[data-live-cancel]").forEach((button) => button.addEventListener("click", discardCurrentSession));
   el.closeFinishModal?.addEventListener("click", closeFinishModal);
   el.confirmFinish?.addEventListener("click", confirmFinish);
   el.saveDraft?.addEventListener("click", keepSessionAsDraft);
