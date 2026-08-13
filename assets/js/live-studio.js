@@ -836,8 +836,8 @@
 
   function syncSessionActionButtons() {
     const canFinish = ["active", "paused", "draft"].includes(state.status);
-    $("[data-live-finish]").forEach((button) => { button.disabled = !canFinish; });
-    $("[data-live-cancel]").forEach((button) => { button.disabled = !canFinish; });
+    $$("[data-live-finish]").forEach((button) => { button.disabled = !canFinish; });
+    $$("[data-live-cancel]").forEach((button) => { button.disabled = !canFinish; });
   }
 
   function setPreviewScale(value) {
@@ -977,8 +977,8 @@
   el.questionBtn?.addEventListener("click", saveQuestion);
   el.question?.addEventListener("keydown", (event) => { if (event.key === "Enter") saveQuestion(); });
   el.finish?.addEventListener("click", openFinishModal);
-  $("[data-live-finish]").forEach((button) => button.addEventListener("click", openFinishModal));
-  $("[data-live-cancel]").forEach((button) => button.addEventListener("click", discardCurrentSession));
+  $$("[data-live-finish]").forEach((button) => button.addEventListener("click", openFinishModal));
+  $$("[data-live-cancel]").forEach((button) => button.addEventListener("click", discardCurrentSession));
   el.closeFinishModal?.addEventListener("click", closeFinishModal);
   el.confirmFinish?.addEventListener("click", confirmFinish);
   el.saveDraft?.addEventListener("click", keepSessionAsDraft);
