@@ -285,6 +285,7 @@
     if (state.active) return toast("الجلسة تعمل بالفعل");
     if (state.status === "paused") return toast("استخدم زر متابعة لاستكمال الجلسة الحالية");
     resetFinishedSession();
+    window.SLCLiveInteractionAssistant?.beginSession?.();
     if (!clock.start()) return toast("تعذر بدء جلسة جديدة");
     state.active = true;
     state.status = "active";
@@ -780,6 +781,7 @@
   }
 
   async function finishMedia() {
+    window.SLCLiveInteractionAssistant?.stopListening?.();
     clock.finish();
     state.active = false;
     state.status = "finished";
