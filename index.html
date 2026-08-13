@@ -167,7 +167,9 @@
             <span class="live-save-state" id="liveSaveState">● الحفظ المحلي جاهز</span>
             <button class="btn primary" id="startLiveBtn">● بدء الجلسة</button>
             <button class="btn soft" id="pauseLiveBtn" disabled>⏸ إيقاف مؤقت</button>
-            <button class="btn soft" id="resumeLiveBtn" disabled>▶ متابعة</button>
+            <button class="btn soft" id="resumeLiveBtn" disabled>▶ استئناف</button>
+            <button class="btn danger live-finish-visible" data-live-finish disabled>■ إنهاء الجلسة</button>
+            <button class="btn ghost live-cancel-visible" data-live-cancel disabled>✕ إلغاء الجلسة</button>
           </div>
         </div>
 
@@ -202,16 +204,24 @@
                 <div class="slide-number-badge" id="slideNumberBadge">الشريحة 0</div>
               </div>
 
-              <div class="stage-controls studio-controls">
-                <button id="microphoneBtn">🎤 الميكروفون</button>
-                <button id="systemAudioBtn">🔊 صوت النظام</button>
-                <button id="shareScreenBtn">🖥 مشاركة شاشة Zoom</button>
-                <button id="reselectScreenBtn">↻ إعادة اختيار مصدر الشاشة</button>
+              <div class="preview-toolbar" aria-label="أدوات عرض Zoom">
+                <button id="toggleStudioToolsBtn" aria-expanded="false">☰ أدوات التسجيل</button>
+                <button id="zoomOutPreviewBtn" title="تصغير المعاينة">−</button>
+                <button id="fitPreviewBtn" title="ملاءمة المعاينة">ملاءمة</button>
+                <button id="zoomInPreviewBtn" title="تكبير المعاينة">+</button>
+                <button id="fullscreenPreviewBtn" title="ملء الشاشة">⛶</button>
+              </div>
+              <div class="stage-controls studio-controls collapsed" id="studioSourceTools">
+                <button id="microphoneBtn">🎤 إضافة صوتي للتسجيل</button>
+                <button id="systemAudioBtn">🔊 اختيار صوت المحاضرة</button>
+                <button id="shareScreenBtn">🖥 اختيار نافذة Zoom</button>
+                <button id="reselectScreenBtn">↻ تغيير نافذة Zoom</button>
                 <button id="captureSlideBtn">📸 حفظ الشريحة</button>
                 <button id="sourceLanguageBtn">🌐 لغة المصدر</button>
                 <button id="studioSettingsBtn">⚙ الإعدادات</button>
               </div>
-              <div class="muted-note" id="liveAudioStatus" role="status" aria-live="polite">الصوت غير متصل</div>
+              <p class="zoom-interaction-note">المعاينة للمشاهدة والتسجيل. استخدم نافذة Zoom الأصلية للتحكم في الميكروفون والشات والمشاركة.</p>
+              <div class="muted-note" id="liveAudioStatus" role="status" aria-live="polite">لم يتم اختيار مصدر صوت</div>
             </div>
 
             <div class="live-transcript">
@@ -276,7 +286,7 @@
             </article>
 
             <article class="panel finish-live-panel">
-              <button class="btn primary wide" id="finishLiveBtn">إنهاء وحفظ</button>
+              <button class="btn primary wide" id="finishLiveBtn">■ إنهاء الجلسة ومراجعتها</button>
               <div class="live-export-actions">
                 <button id="exportLiveJsonBtn">تنزيل JSON</button>
                 <button id="exportLiveTxtBtn">تنزيل TXT</button>
@@ -418,7 +428,23 @@
       <input class="wide-input" id="liveRecordingUrl" placeholder="https://...">
       <label class="field-label">ترتيب اليوم داخل الدورة</label>
       <input class="wide-input" id="liveLectureOrder" type="number" min="1" placeholder="1">
-      <button class="btn primary wide" id="confirmFinishLiveBtn">حفظ ملف المحاضرة</button>
+      <div class="finish-decision-actions">
+        <button class="btn primary wide" id="confirmFinishLiveBtn">حفظ كمحاضرة مكتملة</button>
+        <button class="btn soft wide" id="saveLiveDraftBtn">الاحتفاظ كمسودة للمراجعة</button>
+        <button class="btn danger wide" id="discardLiveSessionBtn">حذف هذه الجلسة</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="slideViewerModal" aria-hidden="true">
+    <div class="modal-card slide-viewer-card">
+      <button class="modal-close" id="closeSlideViewerBtn">×</button>
+      <div class="panel-head"><h2 id="slideViewerTitle">عرض الشريحة</h2><span id="slideViewerMeta"></span></div>
+      <div class="slide-viewer-image"><img id="slideViewerImage" alt="الشريحة المحفوظة"></div>
+      <div class="slide-viewer-actions">
+        <button class="btn soft" id="previousSlideBtn">السابق</button>
+        <button class="btn soft" id="nextSlideBtn">التالي</button>
+      </div>
     </div>
   </div>
 
