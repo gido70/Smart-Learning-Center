@@ -133,8 +133,25 @@
     lectureTitle: $("liveLectureTitle"),
     courseSelect: $("liveCourseSelect"),
     recordingUrl: $("liveRecordingUrl"),
-    lectureOrder: $("liveLectureOrder")
+    lectureOrder: $("liveLectureOrder"),
+    sourceTools: $("studioSourceTools"),
+    toggleTools: $("toggleStudioToolsBtn"),
+    zoomIn: $("zoomInPreviewBtn"),
+    zoomOut: $("zoomOutPreviewBtn"),
+    fitPreview: $("fitPreviewBtn"),
+    fullscreenPreview: $("fullscreenPreviewBtn"),
+    saveDraft: $("saveLiveDraftBtn"),
+    discardSession: $("discardLiveSessionBtn"),
+    slideViewerModal: $("slideViewerModal"),
+    closeSlideViewer: $("closeSlideViewerBtn"),
+    slideViewerImage: $("slideViewerImage"),
+    slideViewerTitle: $("slideViewerTitle"),
+    slideViewerMeta: $("slideViewerMeta"),
+    previousSlide: $("previousSlideBtn"),
+    nextSlide: $("nextSlideBtn")
   };
+  let previewScale = 1;
+  let viewedSlideIndex = -1;
 
   const formatTime = (seconds) => {
     const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
@@ -272,6 +289,7 @@
     el.start.disabled = true;
     el.pause.disabled = false;
     el.resume.disabled = true;
+    syncSessionActionButtons();
     el.statusBadge.textContent = "LIVE";
     el.statusBadge.className = "tag red";
     state.timerId = setInterval(() => {
@@ -293,6 +311,7 @@
     if (state.recorder?.state === "recording") state.recorder.pause();
     el.pause.disabled = true;
     el.resume.disabled = false;
+    syncSessionActionButtons();
     el.statusBadge.textContent = "متوقفة مؤقتًا";
     el.statusBadge.className = "tag amber";
     addEvent("session", "إيقاف مؤقت", "توقف التوقيت والتسجيل والالتقاط التلقائي.", "⏸");
@@ -308,6 +327,7 @@
     startAutoCapture();
     el.pause.disabled = false;
     el.resume.disabled = true;
+    syncSessionActionButtons();
     el.statusBadge.textContent = "LIVE";
     el.statusBadge.className = "tag red";
     addEvent("session", "متابعة الجلسة", "استؤنف التوقيت والتسجيل والالتقاط.", "▶");
@@ -329,11 +349,11 @@
       el.captureEmpty.classList.add("hidden");
       el.shareScreen.classList.add("active");
       addEvent("screen", "بدء مشاركة الشاشة", "تم اختيار نافذة أو شاشة للعرض التقديمي.", "🖥");
-      state.stream.getVideoTracks()[0]?.addEventListener("ended", () => {
+      state.stream.getVideoTracks()[0]?.addEventListener("ended", async () => {
         el.captureEmpty.classList.remove("hidden");
         el.shareScreen.classList.remove("active");
-        addEvent("screen", "انتهاء مشاركة الشاشة", "توقفت مشاركة الشاشة.", "■");
-        updateAudioStatus();
+        addEvent("screen", "انتهاء مشاركة الشاشة", "توقفت مشاركة الشاشة؛ حُفظت الجلسة كمسودة للمراجعة.", "■");
+        await saveInterruptedDraft();
       });
       startAutoCapture();
       updateAudioStatus();
@@ -641,6 +661,7 @@
     el.start.textContent = "● بدء جلسة جديدة";
     el.pause.disabled = true;
     el.resume.disabled = true;
+    syncSessionActionButtons();
   }
 
   async function confirmFinish() {
@@ -683,8 +704,14 @@
   }
 
   function updateAudioStatus() {
-    const connected = audioTracks().length > 0;
-    el.audioStatus.textContent = connected ? "الصوت متصل" : "الصوت غير متصل";
+    const tracks = audioTracks();
+    const connected = tracks.length > 0;
+    const recording = state.recorder?.state === "recording";
+    el.audioStatus.textContent = recording
+      ? `● الصوت يُسجل فعليًا (${tracks.length} مصدر)`
+      : connected
+        ? "الصوت متصل — سيبدأ التسجيل مع الجلسة"
+        : "لا يوجد صوت مسجل — اختر صوت المحاضرة أو أضف ميكروفونك";
     el.audioStatus.classList.toggle("connected", connected);
   }
 
@@ -717,6 +744,7 @@
         if (state.recordingChunks.length) state.recordingBlob = new Blob(state.recordingChunks, { type: state.recorder.mimeType || "audio/webm" });
       };
       state.recorder.start(1000);
+      updateAudioStatus();
     } catch (error) {
       console.error(error);
       updateAudioStatus();
@@ -754,6 +782,75 @@
     state.stream = null; state.micStream = null; state.systemAudioStream = null;
     el.screenPreview.srcObject = null;
     updateAudioStatus();
+    syncSessionActionButtons();
+  }
+
+  async function saveInterruptedDraft() {
+    if (!["active", "paused"].includes(state.status)) {
+      updateAudioStatus();
+      return;
+    }
+    await finishMedia();
+    state.status = "draft";
+    await writeStoredSession(DRAFT_KEY, buildLectureFile()).catch(() => saveLocal());
+    el.statusBadge.textContent = "مسودة — انتهت مشاركة الشاشة";
+    el.statusBadge.className = "tag amber";
+    if (el.saveState) el.saveState.textContent = "● حُفظت مسودة آمنة بانتظار المراجعة";
+    toast("انتهت مشاركة الشاشة وحُفظت الجلسة كمسودة");
+  }
+
+  async function keepSessionAsDraft() {
+    await finishMedia();
+    state.status = "draft";
+    await writeStoredSession(DRAFT_KEY, buildLectureFile()).catch(() => saveLocal());
+    closeFinishModal();
+    renderFinishedState();
+    el.statusBadge.textContent = "محفوظة كمسودة";
+    el.statusBadge.className = "tag amber";
+    toast("تم الاحتفاظ بالجلسة كمسودة للمراجعة");
+  }
+
+  async function discardCurrentSession() {
+    if (!window.confirm("هل تريد حذف هذه الجلسة غير المعتمدة نهائيًا؟ لن تُحذف محاضرات المكتبة.")) return;
+    await finishMedia();
+    await deleteStoredSession(DRAFT_KEY);
+    closeFinishModal();
+    resetFinishedSession();
+    state.status = "idle";
+    renderFinishedState();
+    el.statusBadge.textContent = "غير متصل";
+    el.statusBadge.className = "tag red";
+    toast("تم حذف الجلسة الحالية غير المعتمدة");
+  }
+
+  function syncSessionActionButtons() {
+    const canFinish = ["active", "paused", "draft"].includes(state.status);
+    $("[data-live-finish]").forEach((button) => { button.disabled = !canFinish; });
+    $("[data-live-cancel]").forEach((button) => { button.disabled = !canFinish; });
+  }
+
+  function setPreviewScale(value) {
+    previewScale = Math.max(0.6, Math.min(2.5, value));
+    if (el.screenPreview) el.screenPreview.style.transform = `scale(${previewScale})`;
+  }
+
+  function openSlideViewerById(slideId) {
+    const index = state.slides.findIndex((slide) => slide.id === slideId);
+    if (index < 0 || !state.slides[index].image_data_url) return toast("لا توجد صورة محفوظة لهذا العنصر");
+    viewedSlideIndex = index;
+    renderSlideViewer();
+    el.slideViewerModal.classList.add("open");
+    el.slideViewerModal.setAttribute("aria-hidden", "false");
+  }
+
+  function renderSlideViewer() {
+    const slide = state.slides[viewedSlideIndex];
+    if (!slide) return;
+    el.slideViewerImage.src = slide.image_data_url;
+    el.slideViewerTitle.textContent = slide.title || `الشريحة ${slide.number}`;
+    el.slideViewerMeta.textContent = `الشريحة ${slide.number} · ${formatTime(slide.captured_at_seconds)}`;
+    el.previousSlide.disabled = viewedSlideIndex <= 0;
+    el.nextSlide.disabled = viewedSlideIndex >= state.slides.length - 1;
   }
 
   async function restoreDraft() {
@@ -763,7 +860,7 @@
     } catch (_error) {
       draft = controls.recoverDraft(localStorage, DRAFT_KEY);
     }
-    if (!draft || (!draft.active && draft.status !== "paused")) return;
+    if (!draft || (!draft.active && !["paused", "draft"].includes(draft.status))) return;
     state.mode = draft.mode || "audio";
     state.status = "paused";
     state.slides = draft.slides || [];
@@ -845,8 +942,34 @@
   el.questionBtn?.addEventListener("click", saveQuestion);
   el.question?.addEventListener("keydown", (event) => { if (event.key === "Enter") saveQuestion(); });
   el.finish?.addEventListener("click", openFinishModal);
+  $("[data-live-finish]").forEach((button) => button.addEventListener("click", openFinishModal));
+  $("[data-live-cancel]").forEach((button) => button.addEventListener("click", discardCurrentSession));
   el.closeFinishModal?.addEventListener("click", closeFinishModal);
   el.confirmFinish?.addEventListener("click", confirmFinish);
+  el.saveDraft?.addEventListener("click", keepSessionAsDraft);
+  el.discardSession?.addEventListener("click", discardCurrentSession);
+  el.toggleTools?.addEventListener("click", () => {
+    const collapsed = el.sourceTools.classList.toggle("collapsed");
+    el.toggleTools.setAttribute("aria-expanded", String(!collapsed));
+    el.toggleTools.textContent = collapsed ? "☰ أدوات التسجيل" : "× إخفاء أدوات التسجيل";
+  });
+  el.zoomIn?.addEventListener("click", () => setPreviewScale(previewScale + 0.15));
+  el.zoomOut?.addEventListener("click", () => setPreviewScale(previewScale - 0.15));
+  el.fitPreview?.addEventListener("click", () => setPreviewScale(1));
+  el.fullscreenPreview?.addEventListener("click", () => el.screen?.requestFullscreen?.());
+  el.timeline?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-event-id]");
+    if (!button) return;
+    const lectureEvent = state.events.find((item) => item.id === button.dataset.eventId);
+    if (lectureEvent?.related_id) openSlideViewerById(lectureEvent.related_id);
+    else toast("لا توجد صورة مرتبطة بهذا العنصر");
+  });
+  el.closeSlideViewer?.addEventListener("click", () => {
+    el.slideViewerModal.classList.remove("open");
+    el.slideViewerModal.setAttribute("aria-hidden", "true");
+  });
+  el.previousSlide?.addEventListener("click", () => { if (viewedSlideIndex > 0) { viewedSlideIndex -= 1; renderSlideViewer(); } });
+  el.nextSlide?.addEventListener("click", () => { if (viewedSlideIndex < state.slides.length - 1) { viewedSlideIndex += 1; renderSlideViewer(); } });
   el.exportJson?.addEventListener("click", exportJson);
   el.exportTxt?.addEventListener("click", exportTxt);
   el.slideNotes?.addEventListener("input", () => {
@@ -863,5 +986,6 @@
   renderTimeline();
   renderHighlights();
   updateAudioStatus();
+  syncSessionActionButtons();
   restoreDraft();
 })();
