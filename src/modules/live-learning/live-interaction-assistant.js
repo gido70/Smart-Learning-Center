@@ -285,6 +285,24 @@
     render();
   }
 
+  function stopListening() {
+    if (!state.listening) return;
+    state.listening = false;
+    state.recognition?.stop();
+  }
+
+  function beginSession() {
+    stopListening();
+    state.transcript = "";
+    state.interim = "";
+    state.suggestions = [];
+    state.lastSuggestionText = "";
+    state.lastSlideSource = "";
+    save();
+    render();
+    setStatus("جاهز — شغّل الاستماع", "green");
+  }
+
   function clearAssistant() {
     if (!window.confirm("هل تريد مسح التفريغ والمقترحات الخاصة بالجلسة الحالية؟")) return;
     state.transcript = "";
@@ -324,7 +342,7 @@
     setStatus(SpeechRecognition ? "جاهز — شغّل الاستماع" : "التفريغ يحتاج Chrome أو Edge", SpeechRecognition ? "green" : "amber");
   }
 
-  window.SLCLiveInteractionAssistant = { exportData, analyzeCurrentSlide };
+  window.SLCLiveInteractionAssistant = { exportData, analyzeCurrentSlide, stopListening, beginSession };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
