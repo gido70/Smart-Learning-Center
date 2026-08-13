@@ -26,17 +26,6 @@
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   })[char]);
 
-  function load() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (!saved) return;
-      state.transcript = saved.transcript || "";
-      state.suggestions = Array.isArray(saved.suggestions) ? saved.suggestions : [];
-    } catch (_error) {
-      // يبدأ المساعد بحالة نظيفة إذا تلفت المسودة المحلية.
-    }
-  }
-
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       transcript: state.transcript,
@@ -311,6 +300,30 @@
     setStatus("جاهز — شغّل الاستماع", "green");
   }
 
+  function restoreSession(saved = {}) {
+    stopListening();
+    state.transcript = saved.transcript || "";
+    state.interim = "";
+    state.suggestions = Array.isArray(saved.suggestions) ? saved.suggestions : [];
+    state.lastSuggestionText = "";
+    state.lastSlideSource = "";
+    save();
+    render();
+    setStatus("تمت استعادة مساعد المسودة الحالية", "amber");
+  }
+
+  function endSession() {
+    stopListening();
+    state.transcript = "";
+    state.interim = "";
+    state.suggestions = [];
+    state.lastSuggestionText = "";
+    state.lastSlideSource = "";
+    localStorage.removeItem(STORAGE_KEY);
+    render();
+    setStatus("جاهز لجلسة جديدة", "green");
+  }
+
   function clearAssistant() {
     if (!window.confirm("هل تريد مسح التفريغ والمقترحات الخاصة بالجلسة الحالية؟")) return;
     state.transcript = "";
@@ -333,7 +346,8 @@
   }
 
   function init() {
-    load();
+    // تبدأ صفحة البث نظيفة. استعادة المساعد تتم فقط من مسودة
+    // الجلسة الحالية حتى لا يظهر نص محاضرة سابقة بعد إغلاقها.
     $("aiToggleListeningBtn")?.addEventListener("click", toggleListening);
     $("aiAnalyzeSlideBtn")?.addEventListener("click", () => analyzeCurrentSlide(true));
     $("aiClearAssistantBtn")?.addEventListener("click", clearAssistant);
@@ -350,7 +364,7 @@
     setStatus(SpeechRecognition ? "جاهز — شغّل الاستماع" : "التفريغ يحتاج Chrome أو Edge", SpeechRecognition ? "green" : "amber");
   }
 
-  window.SLCLiveInteractionAssistant = { exportData, analyzeCurrentSlide, stopListening, beginSession };
+  window.SLCLiveInteractionAssistant = { exportData, analyzeCurrentSlide, stopListening, beginSession, restoreSession, endSession };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
