@@ -210,6 +210,7 @@
                 <button id="fitPreviewBtn" title="ملاءمة المعاينة">ملاءمة</button>
                 <button id="zoomInPreviewBtn" title="تكبير المعاينة">+</button>
                 <button id="fullscreenPreviewBtn" title="ملء الشاشة">⛶</button>
+                <button id="exitFullscreenPreviewBtn" class="hidden" title="الخروج من الشاشة الكاملة">خروج ✕</button>
               </div>
               <div class="stage-controls studio-controls collapsed" id="studioSourceTools">
                 <button id="microphoneBtn">🎤 إضافة صوتي للتسجيل</button>
@@ -290,15 +291,19 @@
                   <option value="ar-SA">العربية</option>
                   <option value="en-US">English</option>
                 </select>
+                <select id="aiTranslationLanguage" aria-label="لغة الترجمة" disabled title="تتطلب محرك ترجمة معتمدًا">
+                  <option value="none">الترجمة الآلية — قيد التجهيز</option>
+                </select>
                 <button class="btn soft" id="aiAnalyzeSlideBtn">🖼 تحليل الشريحة الحالية</button>
                 <button class="btn ghost" id="aiClearAssistantBtn">مسح جلسة المساعد</button>
               </div>
               <p class="ai-privacy-note">التفريغ المباشر يستخدم خدمة التعرف على الكلام المتاحة في Chrome/Edge بعد موافقتك على الميكروفون. تحليل الشرائح يعمل داخل المتصفح ولا يحتاج مفتاحًا سريًا.</p>
               <div class="ai-live-transcript" id="aiLiveTranscript">سيظهر التفريغ هنا بعد تشغيل الاستماع.</div>
-              <div class="ai-suggestion-title">
-                <strong>أسئلة ومداخلات مقترحة</strong>
-                <small>احفظ المناسب للمناقشة، أو انسخه، أو استبعده.</small>
+              <div class="ai-suggestion-columns">
+                <section><div class="ai-suggestion-title"><strong>من العرض التقديمي</strong><small>أسئلة ناتجة من الشرائح.</small></div><div class="ai-suggestion-list" id="aiSlideSuggestionList"></div></section>
+                <section><div class="ai-suggestion-title"><strong>من حديث المحاضر</strong><small>أسئلة ومداخلات من الكلام.</small></div><div class="ai-suggestion-list" id="aiSpeechSuggestionList"></div></section>
               </div>
+              <div class="ai-suggestion-title"><strong>أفضل ما يستحق المناقشة بعد المحاضرة</strong><small>اقتراحات قليلة منتقاة للمشاركة أو الفهم.</small></div>
               <div class="ai-suggestion-list" id="aiSuggestionList"></div>
             </article>
 
@@ -433,11 +438,12 @@
   <div class="modal" id="authModal" aria-hidden="true"><div class="modal-card auth-card"><button class="modal-close" id="closeAuthModal">×</button><span class="eyebrow">مركز التعلّم الشخصي</span><h2 id="authTitle">تسجيل دخول عبدالرحمن</h2><p class="auth-note">هذه منصة شخصية خاصة. استخدم حسابك الحالي للدخول إلى محاضراتك وبياناتك.</p><label class="field-label">البريد الإلكتروني</label><input class="wide-input" id="authEmailInput" type="email" autocomplete="email" placeholder="بريدك المسجل"/><label class="field-label">كلمة المرور</label><input class="wide-input" id="authPasswordInput" type="password" autocomplete="current-password" placeholder="كلمة المرور"/><button class="btn primary wide" id="authSubmitBtn">تسجيل الدخول</button><div class="auth-message" id="authMessage"></div></div></div>
 
   <div class="modal" id="finishLiveModal" aria-hidden="true">
-    <div class="modal-card">
+    <div class="modal-card finish-live-modal-card">
       <button class="modal-close" id="closeFinishLiveModal">×</button>
       <span class="eyebrow">Live Learning Studio</span>
       <h2>إنشاء ملف المحاضرة</h2>
       <p class="auth-note">اختر العناصر التي تريد الاحتفاظ بها في سجل المحاضرة.</p>
+      <div class="finish-live-scroll">
       <div class="save-options-grid">
         <label><input type="checkbox" checked data-save-item="slides"> الشرائح المحفوظة</label>
         <label><input type="checkbox" checked data-save-item="timeline"> الخط الزمني</label>
@@ -454,6 +460,7 @@
       <input class="wide-input" id="liveRecordingUrl" placeholder="https://...">
       <label class="field-label">ترتيب اليوم داخل الدورة</label>
       <input class="wide-input" id="liveLectureOrder" type="number" min="1" placeholder="1">
+      </div>
       <div class="finish-decision-actions">
         <button class="btn primary wide" id="confirmFinishLiveBtn">حفظ كمحاضرة مكتملة</button>
         <button class="btn soft wide" id="saveLiveDraftBtn">الاحتفاظ كمسودة للمراجعة</button>
