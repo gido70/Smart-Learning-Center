@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.5.5 — Smart Lecture User Guide
+- Added a clear in-page Arabic operating guide dedicated to the Smart Lecture Workspace.
+- Added a three-step quick start, source explanations, live controls, save decisions, and post-lecture knowledge tools.
+- Added contextual guide buttons that close the guide and move directly to the relevant part of the workspace.
+- Added keyboard and backdrop closing behavior with responsive mobile layout.
+
 ## 3.5.4 — Unified Lecture Workspace
 - Unified live and recorded lecture entry points into one Smart Lecture Workspace while keeping legacy `#replay` links compatible.
 - Added one source chooser for live windows, local recordings, public links, signed-in external platforms, and saved lectures.
