@@ -219,7 +219,7 @@
     const interactionAssistant = window.SLCLiveInteractionAssistant?.exportData?.() || null;
     const combinedTranscript = [state.transcript, interactionAssistant?.transcript].filter(Boolean).join(" ").trim();
     return {
-      version: "3.5.4",
+      version: "3.5.5",
       mode: state.mode,
       active: state.active,
       status: state.status,

@@ -1,9 +1,9 @@
 {
-  "version": "3.5.4",
+  "version": "3.5.5",
   "build": "2026-08-09-personal-lecture-portal",
   "supabase_integration": true,
   "live_studio": true,
   "lecture_portal": true,
   "ai_api_in_frontend": false,
-  "notes": "Unified lecture workspace for live, recorded, linked, and saved sources with one library and local evidence-based knowledge tools."
+  "notes": "Added an accessible in-page Arabic operating guide for the unified Smart Lecture Workspace."
 }
