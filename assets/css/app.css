@@ -58,6 +58,27 @@
 .slide-viewer-image img{max-width:100%;height:auto;display:block;margin:auto}
 .slide-viewer-actions{display:flex;justify-content:center;gap:12px;margin-top:14px}
 @media(max-width:900px){.live-head-actions{position:static}.preview-toolbar{position:relative;top:auto;left:auto;margin-bottom:8px}.presentation-capture{min-height:300px}.live-head-actions .btn{width:100%}}
+
+/* Smart Lecture Workspace — in-page user guide */
+.smart-lecture-guide-open{white-space:nowrap}
+.smart-lecture-guide-card{width:min(780px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;padding:28px}
+.smart-guide-intro{color:var(--muted);margin:0 0 16px;line-height:1.8}
+.smart-guide-start{background:linear-gradient(135deg,#eaf9f6,#f4f8ff);border:1px solid #cde7e3;border-radius:16px;padding:16px;margin-bottom:14px}
+.smart-guide-start h3{margin:0 0 10px;color:var(--primary)}
+.smart-guide-start ol{margin:0;padding-right:22px;line-height:2}
+.smart-guide-sections{display:grid;gap:10px}
+.smart-guide-sections details{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+.smart-guide-sections summary{cursor:pointer;padding:14px 16px;font-weight:800;color:#17383f;background:#f8fbfb}
+.smart-guide-sections details[open] summary{color:var(--primary);border-bottom:1px solid var(--line)}
+.smart-guide-sections details>ul,.smart-guide-sections details>p,.smart-guide-sections details>.smart-guide-table,.smart-guide-sections details>.smart-guide-choice-grid,.smart-guide-sections details>.smart-guide-actions,.smart-guide-sections details>.smart-guide-jump{margin:14px 16px}
+.smart-guide-sections ul{padding-right:20px;line-height:1.9}
+.smart-guide-table{display:grid;grid-template-columns:150px 1fr;gap:9px 14px;align-items:start}
+.smart-guide-table span,.smart-guide-choice-grid span{color:var(--muted);line-height:1.7}
+.smart-guide-choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.smart-guide-choice-grid>div{display:flex;flex-direction:column;gap:5px;background:#f7fbfb;border:1px solid var(--line);border-radius:12px;padding:12px}
+.smart-guide-actions{display:flex;gap:8px;flex-wrap:wrap}
+.modal-open{overflow:hidden}
+@media(max-width:700px){.smart-lecture-guide-card{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding:20px 16px}.smart-guide-table{grid-template-columns:1fr}.smart-guide-table b{margin-top:6px}.smart-guide-choice-grid{grid-template-columns:1fr}}
 @media(max-width:900px){.live-studio-layout>.side-stack{grid-template-columns:1fr}}
 
 
