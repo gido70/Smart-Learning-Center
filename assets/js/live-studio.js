@@ -85,7 +85,10 @@
     recordingChunks: [],
     recordingBlob: null,
     transcript: "",
-    replacingScreen: false
+    replacingScreen: false,
+    autoCaptureEnabled: true,
+    pendingFingerprint: null,
+    pendingFingerprintChecks: 0
   };
 
   const el = {
@@ -109,6 +112,8 @@
     captureSlide: $("captureSlideBtn"),
     mic: $("microphoneBtn"),
     systemAudio: $("systemAudioBtn"),
+    autoCapture: $("autoCaptureBtn"),
+    restoreDraftButton: $("restoreLiveDraftBtn"),
     audioStatus: $("liveAudioStatus"),
     slideBadge: $("slideNumberBadge"),
     timeline: $("lectureTimeline"),
@@ -255,9 +260,6 @@
     el.audioPlaceholder.classList.toggle("hidden", showPresentation);
     el.shareScreen.disabled = !showPresentation;
     el.captureSlide.disabled = !showPresentation;
-    el.mic.classList.toggle("active", mode === "audio" || mode === "hybrid");
-    el.systemAudio.classList.toggle("active", mode === "audio" || mode === "hybrid");
-
     addEvent("mode", "تغيير وضع الالتقاط", `تم اختيار ${labels[mode]}`, "⚙");
     saveLocal();
   }
@@ -285,6 +287,8 @@
 
   async function clearCompletedWorkspace() {
     await deleteStoredSession(DRAFT_KEY);
+    localStorage.removeItem("slc_live_draft_available");
+    el.restoreDraftButton?.classList.add("hidden");
     resetFinishedSession();
     state.status = "idle";
     state.active = false;
@@ -363,10 +367,25 @@
     saveLocal();
   }
 
-  async function shareScreen() {
+  async function shareScreen(forceReplace = false) {
     if (!navigator.mediaDevices?.getDisplayMedia) {
       toast("المتصفح لا يدعم مشاركة الشاشة. استخدم Chrome أو Edge.");
       return;
+    }
+    if (state.stream?.getVideoTracks().some((track) => track.readyState === "live") && !forceReplace) {
+      state.replacingScreen = true;
+      controls.stopAllTracks([state.stream]);
+      state.stream = null;
+      state.replacingScreen = false;
+      el.screenPreview.srcObject = null;
+      el.captureEmpty.classList.remove("hidden");
+      el.shareScreen.classList.remove("active");
+      el.shareScreen.setAttribute("aria-pressed", "false");
+      el.shareScreen.textContent = "🖥 مشاركة العرض: متوقفة";
+      stopAutoCapture();
+      await restartRecorder();
+      updateAudioStatus();
+      return toast("تم إيقاف مشاركة العرض");
     }
     try {
       state.replacingScreen = Boolean(state.stream);
@@ -378,12 +397,16 @@
       el.screenPreview.srcObject = state.stream;
       el.captureEmpty.classList.add("hidden");
       el.shareScreen.classList.add("active");
+      el.shareScreen.setAttribute("aria-pressed", "true");
+      el.shareScreen.textContent = "🖥 مشاركة العرض: تعمل";
       addEvent("screen", "بدء مشاركة الشاشة", "تم اختيار نافذة أو شاشة للعرض التقديمي.", "🖥");
       state.replacingScreen = false;
       state.stream.getVideoTracks()[0]?.addEventListener("ended", async () => {
         if (state.replacingScreen) return;
         el.captureEmpty.classList.remove("hidden");
         el.shareScreen.classList.remove("active");
+        el.shareScreen.setAttribute("aria-pressed", "false");
+        el.shareScreen.textContent = "🖥 مشاركة العرض: متوقفة";
         addEvent("screen", "انتهاء مشاركة الشاشة", "توقفت مشاركة الشاشة؛ حُفظت الجلسة كمسودة للمراجعة.", "■");
         await saveInterruptedDraft();
       });
@@ -400,6 +423,17 @@
   }
 
   async function startMic() {
+    if (state.micStream?.getAudioTracks().some((track) => track.readyState === "live")) {
+      controls.stopAllTracks([state.micStream]);
+      state.micStream = null;
+      el.mic.classList.remove("active");
+      el.mic.setAttribute("aria-pressed", "false");
+      el.mic.textContent = "🎤 صوتي: متوقف";
+      addEvent("audio", "إيقاف الميكروفون", "تم منع التقاط الأصوات المحيطة.", "■");
+      updateAudioStatus();
+      await restartRecorder();
+      return toast("تم إيقاف ميكروفونك");
+    }
     if (!navigator.mediaDevices?.getUserMedia) {
       toast("المتصفح لا يدعم التقاط الصوت من الميكروفون.");
       return;
@@ -407,10 +441,14 @@
     try {
       state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       el.mic.classList.add("active");
+      el.mic.setAttribute("aria-pressed", "true");
+      el.mic.textContent = "🔴 صوتي: يعمل — اضغط للإيقاف";
       el.captureEmpty.classList.add("hidden");
       addEvent("audio", "تفعيل الميكروفون", "بدأ التقاط الصوت من الميكروفون.", "🎤");
       state.micStream.getAudioTracks()[0]?.addEventListener("ended", () => {
         el.mic.classList.remove("active");
+        el.mic.setAttribute("aria-pressed", "false");
+        el.mic.textContent = "🎤 صوتي: متوقف";
         if (!state.stream && !state.systemAudioStream) el.captureEmpty.classList.remove("hidden");
         addEvent("audio", "توقف الميكروفون", "توقف التقاط الصوت من الميكروفون.", "■");
         updateAudioStatus();
@@ -430,6 +468,17 @@
   }
 
   async function startSystemAudio() {
+    if (state.systemAudioStream?.getAudioTracks().some((track) => track.readyState === "live")) {
+      controls.stopAllTracks([state.systemAudioStream]);
+      state.systemAudioStream = null;
+      el.systemAudio.classList.remove("active");
+      el.systemAudio.setAttribute("aria-pressed", "false");
+      el.systemAudio.textContent = "🔊 صوت المحاضرة: متوقف";
+      addEvent("audio", "إيقاف صوت المحاضرة", "توقف التقاط صوت النظام.", "■");
+      updateAudioStatus();
+      await restartRecorder();
+      return toast("تم إيقاف صوت المحاضرة");
+    }
     if (!navigator.mediaDevices?.getDisplayMedia) {
       toast("المتصفح لا يدعم التقاط صوت النظام. استخدم Chrome أو Edge.");
       return;
@@ -445,10 +494,14 @@
       displayStream.getVideoTracks().forEach((track) => track.stop());
       state.systemAudioStream = displayStream;
       el.systemAudio.classList.add("active");
+      el.systemAudio.setAttribute("aria-pressed", "true");
+      el.systemAudio.textContent = "🔊 صوت المحاضرة: يعمل — اضغط للإيقاف";
       el.captureEmpty.classList.add("hidden");
       addEvent("audio", "تفعيل صوت النظام", "بدأ التقاط صوت النظام (صوت Zoom مثلاً).", "🔊");
       audioTracks[0]?.addEventListener("ended", () => {
         el.systemAudio.classList.remove("active");
+        el.systemAudio.setAttribute("aria-pressed", "false");
+        el.systemAudio.textContent = "🔊 صوت المحاضرة: متوقف";
         if (!state.stream && !state.micStream) el.captureEmpty.classList.remove("hidden");
         addEvent("audio", "توقف صوت النظام", "توقف التقاط صوت النظام.", "■");
         updateAudioStatus();
@@ -814,7 +867,7 @@
 
   function startAutoCapture() {
     stopAutoCapture();
-    if (!state.active || !state.stream) return;
+    if (!state.active || !state.stream || !state.autoCaptureEnabled) return;
     let unchangedChecks = 0;
     state.autoCaptureId = setInterval(() => {
       const video = el.screenPreview;
@@ -824,14 +877,32 @@
       const context = canvas.getContext("2d", { willReadFrequently: true });
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const fingerprint = controls.frameFingerprint(context.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
-      if (controls.isDistinctSlide(state.lastFingerprint, fingerprint, 0.075)) {
-        unchangedChecks = 0;
-        captureSlide("automatic", fingerprint);
+      if (controls.isDistinctSlide(state.lastFingerprint, fingerprint, 0.055)) {
+        const sameCandidate = state.pendingFingerprint && !controls.isDistinctSlide(state.pendingFingerprint, fingerprint, 0.025);
+        state.pendingFingerprint = fingerprint;
+        state.pendingFingerprintChecks = sameCandidate ? state.pendingFingerprintChecks + 1 : 1;
+        if (state.pendingFingerprintChecks >= 2) {
+          unchangedChecks = 0;
+          state.pendingFingerprint = null;
+          state.pendingFingerprintChecks = 0;
+          captureSlide("automatic", fingerprint);
+          if (el.audioStatus) el.audioStatus.textContent = `● رُصدت شريحة جديدة الآن · ${formatTime(elapsed())}`;
+        }
       } else {
+        state.pendingFingerprint = null;
+        state.pendingFingerprintChecks = 0;
         unchangedChecks += 1;
-        if (unchangedChecks === 30 && el.audioStatus) el.audioStatus.textContent = "الصورة لم تتغير منذ دقيقتين — تحقق من أن نافذة العرض ما زالت مشتركة";
+        if (unchangedChecks % 5 === 0 && el.audioStatus) el.audioStatus.textContent = `مراقبة العرض تعمل · آخر فحص ${formatTime(elapsed())}`;
       }
-    }, 4000);
+    }, 1500);
+  }
+
+  function toggleAutoCapture() {
+    state.autoCaptureEnabled = !state.autoCaptureEnabled;
+    el.autoCapture?.setAttribute("aria-pressed", String(state.autoCaptureEnabled));
+    if (el.autoCapture) el.autoCapture.textContent = state.autoCaptureEnabled ? "⚡ الالتقاط التلقائي: سريع" : "⏸ الالتقاط التلقائي: متوقف";
+    if (state.autoCaptureEnabled) startAutoCapture(); else stopAutoCapture();
+    toast(state.autoCaptureEnabled ? "تم تشغيل متابعة الشرائح السريعة" : "تم إيقاف الالتقاط التلقائي");
   }
 
   async function finishMedia() {
@@ -845,6 +916,15 @@
     controls.stopAllTracks([state.stream, state.micStream, state.systemAudioStream]);
     state.stream = null; state.micStream = null; state.systemAudioStream = null;
     el.screenPreview.srcObject = null;
+    el.mic.classList.remove("active");
+    el.mic.setAttribute("aria-pressed", "false");
+    el.mic.textContent = "🎤 صوتي: متوقف";
+    el.systemAudio.classList.remove("active");
+    el.systemAudio.setAttribute("aria-pressed", "false");
+    el.systemAudio.textContent = "🔊 صوت المحاضرة: متوقف";
+    el.shareScreen.classList.remove("active");
+    el.shareScreen.setAttribute("aria-pressed", "false");
+    el.shareScreen.textContent = "🖥 مشاركة العرض: متوقفة";
     updateAudioStatus();
     syncSessionActionButtons();
   }
@@ -870,11 +950,20 @@
     await finishMedia();
     state.status = "draft";
     await writeStoredSession(DRAFT_KEY, buildLectureFile()).catch(() => saveLocal());
-    renderFinishedState();
-    el.statusBadge.textContent = "محفوظة كمسودة";
-    el.statusBadge.className = "tag amber";
+    localStorage.setItem("slc_live_draft_available", "1");
     setFinishBusy(false);
-    closeFinishAndResetView("تم الاحتفاظ بالجلسة كمسودة للمراجعة");
+    state.status = "finished";
+    resetFinishedSession();
+    state.status = "idle";
+    el.start.disabled = false;
+    el.start.textContent = "● بدء جلسة جديدة";
+    el.pause.disabled = true;
+    el.resume.disabled = true;
+    el.statusBadge.textContent = "غير متصل";
+    el.statusBadge.className = "tag red";
+    el.restoreDraftButton?.classList.remove("hidden");
+    syncSessionActionButtons();
+    closeFinishAndResetView("تم حفظ المسودة وإغلاق الجلسة — استعدها من الزر أعلى الصفحة");
     } catch (error) {
       console.error(error);
       setFinishBusy(false);
@@ -886,6 +975,8 @@
     if (!window.confirm("هل تريد حذف هذه الجلسة غير المعتمدة نهائيًا؟ لن تُحذف محاضرات المكتبة.")) return;
     await finishMedia();
     await deleteStoredSession(DRAFT_KEY);
+    localStorage.removeItem("slc_live_draft_available");
+    el.restoreDraftButton?.classList.add("hidden");
     closeFinishAndResetView();
     resetFinishedSession();
     state.status = "idle";
@@ -949,6 +1040,7 @@
     el.statusBadge.className = "tag amber";
     renderTimeline(); renderHighlights();
     toast("تمت استعادة الجلسة المؤقتة؛ أعد توصيل مصادر الوسائط ثم تابع");
+    el.restoreDraftButton?.classList.add("hidden");
   }
 
   window.addEventListener("beforeunload", (event) => {
@@ -1027,10 +1119,12 @@
   el.start?.addEventListener("click", startSession);
   el.pause?.addEventListener("click", pauseSession);
   el.resume?.addEventListener("click", resumeSession);
-  el.shareScreen?.addEventListener("click", shareScreen);
-  el.reselectScreen?.addEventListener("click", shareScreen);
+  el.shareScreen?.addEventListener("click", () => shareScreen(false));
+  el.reselectScreen?.addEventListener("click", () => shareScreen(true));
   el.mic?.addEventListener("click", startMic);
   el.systemAudio?.addEventListener("click", startSystemAudio);
+  el.autoCapture?.addEventListener("click", toggleAutoCapture);
+  el.restoreDraftButton?.addEventListener("click", restoreDraft);
   el.captureSlide?.addEventListener("click", () => captureSlide("manual"));
   el.markImportant?.addEventListener("click", markImportant);
   el.markRevisited?.addEventListener("click", markRevisited);
@@ -1089,5 +1183,5 @@
   renderHighlights();
   updateAudioStatus();
   syncSessionActionButtons();
-  restoreDraft();
+  if (localStorage.getItem("slc_live_draft_available") === "1") el.restoreDraftButton?.classList.remove("hidden");
 })();

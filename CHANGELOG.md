@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.5.3 — Live Studio Final Polish
+- Added explicit on/off states for microphone, system audio, screen sharing, and fast automatic slide capture.
+- Reduced slide detection latency to two seconds with a short stability check and a manual immediate-capture button.
+- Changed lecture and slide suggestions to readable full-width sections and fixed their save/copy/dismiss actions.
+- Added a local lecture-context helper that retrieves transcript and slide evidence without an external AI API.
+- Closed and cleared the live workspace after saving a draft while keeping the draft available through an explicit restore button.
+- Improved end-of-session cleanup so media sources and stale assistant content do not leak into the next session.
+
 ## 3.5.2 — Improved Local Summary
 - Added resumable live-session controls, automatic distinct-slide capture, real audio-status reporting, browser recording, and local crash recovery without changing the release number.
 - Added a platform-wide Arabic functional audit and focused tests for live-session timing, recovery, slide deduplication, and media-track shutdown.
