@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=3.5.4" />
+  <link rel="stylesheet" href="assets/css/app.css?v=3.5.5" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -162,6 +162,7 @@
             <p>صفحة واحدة للمباشر والمسجل والمنصات الخارجية؛ تجمع النص والشرائح والملاحظات في سجل معرفي موحّد.</p>
           </div>
           <div class="live-head-actions">
+            <button class="btn ghost smart-lecture-guide-open" id="openSmartLectureGuideBtn">؟ دليل الصفحة</button>
             <span class="live-save-state" id="liveSaveState">● الحفظ المحلي جاهز</span>
             <button class="btn ghost hidden" id="restoreLiveDraftBtn">↩ استعادة آخر مسودة</button>
             <button class="btn primary" id="startLiveBtn">● بدء الجلسة</button>
@@ -525,18 +526,87 @@
     </div>
   </div>
 
+  <div class="modal smart-lecture-guide-modal" id="smartLectureGuideModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="smartLectureGuideTitle">
+    <div class="modal-card smart-lecture-guide-card">
+      <button class="modal-close" id="closeSmartLectureGuideBtn" aria-label="إغلاق الدليل">×</button>
+      <span class="eyebrow">Smart Lecture Guide</span>
+      <h2 id="smartLectureGuideTitle">دليل مساحة المحاضرة الذكية</h2>
+      <p class="smart-guide-intro">لا تحتاج إلى استعمال كل الأدوات. ابدأ بالخطوات الثلاث التالية، وافتح التفاصيل عند الحاجة.</p>
+
+      <section class="smart-guide-start" aria-label="البدء السريع">
+        <h3>ابدأ في 3 خطوات</h3>
+        <ol>
+          <li><b>اختر المصدر:</b> مباشر، ملف، رابط، منصة بحسابك، أو محاضرة محفوظة.</li>
+          <li><b>شغّل ما تحتاجه:</b> صوت المحاضرة، مشاركة العرض، ثم ابدأ الجلسة.</li>
+          <li><b>عند النهاية:</b> اضغط «إنهاء الجلسة» واختر مكتملة أو مسودة أو حذف.</li>
+        </ol>
+      </section>
+
+      <div class="smart-guide-sections">
+        <details open>
+          <summary>1. اختيار مصدر المحاضرة</summary>
+          <div class="smart-guide-table">
+            <b>بث مباشر</b><span>لـ Zoom أو أي لقاء قائم الآن.</span>
+            <b>ملف فيديو أو صوت</b><span>لتسجيل محفوظ على جهازك.</span>
+            <b>YouTube أو رابط عام</b><span>لدراسة محاضرة منشورة.</span>
+            <b>منصة بحسابك</b><span>افتحها وسجّل الدخول في نافذتها الأصلية؛ المنصة لا تحفظ كلمة المرور.</span>
+            <b>محاضرة محفوظة</b><span>لفتح محاضرة سابقة من المكتبة ومواصلة دراستها.</span>
+          </div>
+          <button class="btn soft smart-guide-jump" data-guide-target="lectureSourceGrid">اذهب إلى اختيار المصدر</button>
+        </details>
+
+        <details>
+          <summary>2. أثناء المحاضرة المباشرة</summary>
+          <ul>
+            <li><b>صوت المحاضرة:</b> يلتقط صوت Zoom أو الجهاز. اترك «صوتي» متوقفًا إذا كنت لا تريد تسجيل صوت الغرفة.</li>
+            <li><b>مشاركة العرض:</b> تعرض نافذة المحاضرة وتلتقط تغيّر الشرائح تلقائيًا. استخدم «تحديث الشريحة الآن» إذا أردت لقطة فورية.</li>
+            <li><b>الإيقاف المؤقت والاستئناف:</b> للاستراحات دون إنهاء ملف المحاضرة.</li>
+            <li><b>النص والأسئلة:</b> يظهر التفريغ والملاحظات، وتبقى اقتراحات النقاش مساعدة اختيارية وليست إجابات مصطنعة.</li>
+          </ul>
+          <button class="btn soft smart-guide-jump" data-guide-target="studioScreen">اذهب إلى أدوات الجلسة</button>
+        </details>
+
+        <details>
+          <summary>3. الحفظ وإنهاء الجلسة</summary>
+          <div class="smart-guide-choice-grid">
+            <div><b>مكتملة</b><span>للمحاضرة الصحيحة الجاهزة للدراسة.</span></div>
+            <div><b>مسودة</b><span>للاحتفاظ بها ومراجعتها أو إكمالها لاحقًا.</span></div>
+            <div><b>حذف</b><span>لجلسة تجريبية أو غير صالحة. يتطلب اختيارًا صريحًا.</span></div>
+          </div>
+          <p>بعد الحفظ تُغلق الجلسة الحالية وتجد المحاضرة في «مكتبة المحاضرات» أسفل الصفحة.</p>
+          <button class="btn soft smart-guide-jump" data-guide-target="finishLiveBtn">اذهب إلى إنهاء الجلسة</button>
+        </details>
+
+        <details>
+          <summary>4. بعد المحاضرة</summary>
+          <ul>
+            <li>افتح المحاضرة من المكتبة للبحث داخل النص والشرائح.</li>
+            <li>استخدم مختبر المعرفة للخلاصة، الخريطة الذهنية، الاختبار، مراجعة الشرائح، أو التقرير التطبيقي.</li>
+            <li>كل نتيجة محلية تعتمد على محتوى المحاضرة المحفوظ، ولا تضيف معلومات بلا مصدر.</li>
+          </ul>
+          <div class="smart-guide-actions">
+            <button class="btn soft smart-guide-jump" data-guide-target="lectureKnowledgeTools">مختبر المعرفة</button>
+            <button class="btn soft smart-guide-jump" data-guide-target="lectureLibrary">مكتبة المحاضرات</button>
+          </div>
+        </details>
+      </div>
+      <button class="btn primary wide" id="finishSmartLectureGuideBtn">فهمت — ابدأ الاستخدام</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.5.4"></script>
-  <script src="assets/js/supabase-integration.js?v=3.5.4"></script>
-  <script src="src/modules/live-learning/session-controls.js?v=3.5.4"></script>
+  <script src="assets/js/app.js?v=3.5.5"></script>
+  <script src="assets/js/supabase-integration.js?v=3.5.5"></script>
+  <script src="src/modules/live-learning/session-controls.js?v=3.5.5"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="assets/js/live-studio.js?v=3.5.4"></script>
-  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.5.4"></script>
-  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.5.4"></script>
-  <script src="assets/js/workspace.js?v=3.5.4"></script>
-  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.4"></script>
-  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.4"></script>
-  <script src="src/modules/course-series/course-series.js?v=3.5.4"></script>
+  <script src="assets/js/live-studio.js?v=3.5.5"></script>
+  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.5.5"></script>
+  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.5.5"></script>
+  <script src="assets/js/workspace.js?v=3.5.5"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.5"></script>
+  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.5"></script>
+  <script src="src/modules/course-series/course-series.js?v=3.5.5"></script>
+  <script src="src/modules/lecture-workspace/smart-lecture-guide.js?v=3.5.5"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>
