@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=3.5.3" />
+  <link rel="stylesheet" href="assets/css/app.css?v=3.5.4" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -25,9 +25,7 @@
       <nav class="nav" id="nav">
         <button class="nav-item active" data-view="dashboard"><span>⌂</span> لوحة التحكم</button>
         <button class="nav-item" data-view="advisor"><span>◎</span> مستشار التعلّم</button>
-        <button class="nav-item" data-view="live"><span>●</span> التعلّم المباشر</button>
-        <button class="nav-item" data-view="replay"><span>▶</span> المحاضرات المسجلة</button>
-        <button class="nav-item" data-view="workspace"><span>▣</span> مساحة المحاضرة</button>
+        <button class="nav-item" data-view="live"><span>▣</span> مساحة المحاضرة الذكية</button>
         <button class="nav-item" data-view="courses"><span>▦</span> مكتبة الكورسات</button>
         <button class="nav-item" data-view="inbox"><span>⇩</span> صندوق المعرفة</button>
         <button class="nav-item" data-view="micro"><span>⚡</span> التعلّم السريع</button>
@@ -159,9 +157,9 @@
       <section class="view" id="live">
         <div class="page-head live-page-head">
           <div>
-            <span class="eyebrow">Live Learning Studio — Deploy Test</span>
-            <h2>استوديو التعلم المباشر</h2>
-            <p>التقط الصوت أو العرض التقديمي أو الاثنين معًا، ثم ابنِ ملف المحاضرة خطوة بخطوة.</p>
+            <span class="eyebrow">Unified Lecture Workspace</span>
+            <h2>مساحة المحاضرة الذكية</h2>
+            <p>صفحة واحدة للمباشر والمسجل والمنصات الخارجية؛ تجمع النص والشرائح والملاحظات في سجل معرفي موحّد.</p>
           </div>
           <div class="live-head-actions">
             <span class="live-save-state" id="liveSaveState">● الحفظ المحلي جاهز</span>
@@ -173,6 +171,24 @@
             <button class="btn ghost live-cancel-visible" data-live-cancel disabled>✕ إلغاء الجلسة</button>
           </div>
         </div>
+
+        <section class="panel unified-source-panel" aria-labelledby="lectureSourceHeading">
+          <div class="panel-head"><div><h3 id="lectureSourceHeading">1. اختر مصدر المحاضرة</h3><small class="muted-note">الاختلاف في طريقة الإدخال فقط؛ أدوات الفهم والحفظ واحدة.</small></div></div>
+          <div class="lecture-source-grid" id="lectureSourceGrid">
+            <button class="active" data-lecture-source="live"><span>●</span><b>بث مباشر</b><small>Zoom أو أي بث تشاركه</small></button>
+            <button data-lecture-source="recording"><span>▶</span><b>ملف فيديو أو صوت</b><small>تسجيل موجود على الجهاز</small></button>
+            <button data-lecture-source="youtube"><span>YT</span><b>YouTube أو رابط عام</b><small>افتحه وادرسه داخل المساحة</small></button>
+            <button data-lecture-source="account_platform"><span>▣</span><b>منصة بحسابك</b><small>الدخول في نافذتها الأصلية دون حفظ كلمة المرور</small></button>
+            <button data-lecture-source="saved"><span>↩</span><b>محاضرة محفوظة</b><small>استكمال الدراسة من المكتبة أدناه</small></button>
+          </div>
+          <div class="recorded-source-input hidden" id="recordedSourceInput">
+            <input class="wide-input" id="unifiedSourceUrl" placeholder="ألصق رابط YouTube أو رابط المحاضرة، أو اختر ملفًا من جهازك">
+            <input id="unifiedSourceFile" type="file" accept="audio/*,video/*" class="hidden">
+            <button class="btn soft" id="chooseUnifiedFileBtn">اختيار ملف</button>
+            <button class="btn primary" id="openUnifiedSourceBtn">فتح في مساحة الدراسة</button>
+          </div>
+          <p class="auth-note hidden" id="externalPlatformNotice">افتح المنصة الخارجية وسجّل الدخول بنفسك، ثم شارك نافذة المحاضرة وصوت النظام. لا تُحفظ بيانات الدخول داخل مركز التعلم.</p>
+        </section>
 
         <div class="capture-mode-switch" id="captureModeSwitch" role="tablist" aria-label="نوع المحاضرة">
           <button class="active" data-capture-mode="audio">🎤 صوت</button>
@@ -330,8 +346,28 @@
                 <button id="exportLiveTxtBtn">تنزيل TXT</button>
               </div>
             </article>
+
+            <article class="panel lecture-knowledge-tools" id="lectureKnowledgeTools">
+              <div class="panel-head"><div><h3>مختبر المعرفة بعد المحاضرة</h3><small class="muted-note">أدوات محلية موثقة من النص والشرائح؛ لا تُنشئ معلومة بلا مصدر.</small></div><span class="tag green">Notebook Workspace</span></div>
+              <div class="knowledge-tool-grid" role="tablist">
+                <button class="active" data-knowledge-tool="summary">الخلاصة والمفاهيم</button>
+                <button data-knowledge-tool="ask">اسأل المحاضرة</button>
+                <button data-knowledge-tool="mindmap">الخريطة الذهنية</button>
+                <button data-knowledge-tool="quiz">اختبار بالفهم</button>
+                <button data-knowledge-tool="review">شرائح المراجعة</button>
+                <button data-knowledge-tool="report">التقرير التطبيقي</button>
+              </div>
+              <div class="knowledge-query hidden" id="knowledgeQueryBox"><input id="knowledgeQueryInput" placeholder="اكتب مفهومًا أو سؤالًا ورد في المحاضرة"><button id="knowledgeQueryBtn">بحث موثق</button></div>
+              <div class="knowledge-output" id="knowledgeToolOutput">ابدأ المحاضرة أو افتح محاضرة محفوظة، ثم اختر الأداة المطلوبة. كل نتيجة ستشير إلى مصدرها وتوقيتها متى توفر.</div>
+            </article>
           </div>
         </div>
+
+        <section class="unified-library" id="lectureLibrary">
+          <div class="page-head"><div><span class="eyebrow">Lecture Library</span><h2>2. مكتبة المحاضرات</h2><p>المباشر والمسجل يصبحان بعد الحفظ ملف محاضرة واحدًا قابلًا للبحث والدراسة.</p></div><button class="btn primary" id="addLectureBtn">＋ إضافة محاضرة</button></div>
+          <div class="platform-strip" id="lecturePlatformFilters"><button class="active" data-platform-filter="all">كل المصادر</button></div>
+          <div class="cards-grid" id="replayCards"></div>
+        </section>
       </section>
 
       <section class="view" id="workspace">
@@ -350,11 +386,13 @@
             <div><small>المصدر الحالي</small><h3 id="workspaceTitle">سياسات RLS في Supabase — شرح وتطبيق عملي</h3><p id="workspaceMeta">YouTube · ساعتان و18 دقيقة · آخر مشاهدة عند 24:36</p></div>
           </div>
           <div class="view-options">
+            <button class="btn ghost" id="backToUnifiedLectureBtn">← العودة إلى مساحة المحاضرة</button>
             <button class="btn primary active" id="watchInsideBtn">▶ مشاهدة داخل المنصة</button>
             <a class="btn ghost external-link" id="watchOutsideBtn" href="https://www.youtube.com/" target="_blank" rel="noopener">↗ فتح في المصدر الأصلي</a>
             <button class="btn soft" id="resumeBtn">↪ استئناف من 24:36</button>
             <button class="btn ghost hidden" id="editCurrentLectureBtn">✎ تعديل المحاضرة</button>
             <button class="btn ghost hidden" id="deleteCurrentLectureBtn">حذف المحاضرة</button>
+            <button class="btn soft" id="openKnowledgeToolsBtn">أدوات المعرفة لهذه المحاضرة</button>
           </div>
         </article>
 
@@ -395,7 +433,6 @@
         </div>
       </section>
 
-      <section class="view" id="replay"><div class="page-head"><div><span class="eyebrow">Personal Lecture Portal</span><h2>بوابة المحاضرات</h2><p>كل محاضراتك من YouTube والمنصات الجامعية والمدفوعة والملفات الخاصة في مكان واحد.</p></div><button class="btn primary" id="addLectureBtn">＋ إضافة محاضرة</button></div><div class="platform-strip" id="lecturePlatformFilters"><button class="active" data-platform-filter="all">كل المنصات</button></div><div class="cards-grid" id="replayCards"></div></section>
       <section class="view" id="courses"><div class="page-head"><div><span class="eyebrow">Course Library</span><h2>مكتبة الكورسات</h2><p>جميع دوراتك من YouTube والمنصات المدفوعة والملفات الخاصة في مكان واحد.</p></div><button class="btn primary" id="addCourseBtn">＋ إضافة كورس</button></div><div class="filter-row" id="courseFilters"><button class="active" data-course-status="all">الكل</button><button data-course-status="active">قيد التعلّم</button><button data-course-status="paused">تحتاج مراجعة</button><button data-course-status="completed">مكتملة</button><input id="courseSearchInput" placeholder="بحث داخل الكورسات"/></div><div class="cards-grid" id="courseCards"></div></section>
       <section class="view" id="inbox"><div class="page-head"><div><span class="eyebrow">Knowledge Inbox</span><h2>صندوق المعرفة</h2><p>ألصق أي رابط الآن، واتخذ قرار المعالجة لاحقاً دون أن تضيع الفكرة.</p></div><button class="btn primary" id="openAddModal">＋ إضافة مصدر</button></div><div class="inbox-board" id="inboxBoard"></div></section>
       <section class="view" id="micro"><div class="page-head"><div><span class="eyebrow">Micro Learning Center</span><h2>التعلّم السريع</h2><p>حوّل Shorts وReels وTikTok وX إلى كبسولات معرفة قابلة للبحث والتجميع.</p></div><button class="btn primary">＋ إضافة رابط قصير</button></div><div class="platform-strip"><span>YouTube Shorts</span><span>Instagram Reels</span><span>Facebook Reels</span><span>TikTok</span><span>X</span></div><div class="micro-grid" id="microCards"></div></section>
@@ -489,16 +526,17 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.5.3"></script>
-  <script src="assets/js/supabase-integration.js?v=3.5.3"></script>
-  <script src="src/modules/live-learning/session-controls.js?v=3.5.3"></script>
+  <script src="assets/js/app.js?v=3.5.4"></script>
+  <script src="assets/js/supabase-integration.js?v=3.5.4"></script>
+  <script src="src/modules/live-learning/session-controls.js?v=3.5.4"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="assets/js/live-studio.js?v=3.5.3"></script>
-  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.5.3"></script>
-  <script src="assets/js/workspace.js?v=3.5.3"></script>
-  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.3"></script>
-  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.3"></script>
-  <script src="src/modules/course-series/course-series.js?v=3.5.3"></script>
+  <script src="assets/js/live-studio.js?v=3.5.4"></script>
+  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.5.4"></script>
+  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.5.4"></script>
+  <script src="assets/js/workspace.js?v=3.5.4"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.4"></script>
+  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.4"></script>
+  <script src="src/modules/course-series/course-series.js?v=3.5.4"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>

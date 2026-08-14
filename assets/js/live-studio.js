@@ -219,7 +219,7 @@
     const interactionAssistant = window.SLCLiveInteractionAssistant?.exportData?.() || null;
     const combinedTranscript = [state.transcript, interactionAssistant?.transcript].filter(Boolean).join(" ").trim();
     return {
-      version: "3.5.2",
+      version: "3.5.4",
       mode: state.mode,
       active: state.active,
       status: state.status,
@@ -671,18 +671,26 @@
   }
 
   function refreshSummary() {
-    if (!state.transcript.trim()) {
+    const assistantTranscript = window.SLCLiveInteractionAssistant?.exportData?.()?.transcript || "";
+    const notes = state.slides.flatMap((slide) => [slide.title, slide.notes]).filter(Boolean);
+    const important = state.highlights.filter(Boolean);
+    const questions = state.questions.map((item) => item.question).filter(Boolean);
+    const sourceText = [state.transcript, assistantTranscript, ...notes, ...important, ...questions].filter(Boolean).join(". ").trim();
+    if (!sourceText) {
       el.summaryText.textContent = "لا يتوفر نص حقيقي للتلخيص. احتفظ بالتسجيل واستخدم محرك تفريغ معتمد لاحقًا.";
       return toast("لا يمكن إنشاء ملخص دون نص حقيقي");
     }
-    const notes = state.slides.map((slide) => slide.notes).filter(Boolean);
-    const important = state.highlights.filter(Boolean);
-    const questions = state.questions.map((item) => item.question);
-    const parts = [];
-    if (important.length) parts.push(`أهم النقاط: ${important.slice(-3).join("، ")}`);
-    if (notes.length) parts.push(`ملاحظات الشرائح: ${notes.slice(-3).join("، ")}`);
-    if (questions.length) parts.push(`أسئلة للمتابعة: ${questions.slice(-2).join("، ")}`);
-    el.summaryText.textContent = parts.length ? parts.join("\n\n") : "لا توجد بيانات كافية بعد. احفظ بعض الشرائح أو أضف ملاحظات.";
+    try {
+      const detailed = window.slcLectureSummarizer?.buildSummary?.(sourceText, el.lectureTitle?.value.trim() || "المحاضرة الحالية");
+      if (detailed) el.summaryText.textContent = detailed;
+      else throw new Error("summarizer unavailable");
+    } catch (_error) {
+      const parts = [];
+      if (important.length) parts.push(`أهم النقاط: ${important.slice(-5).join("، ")}`);
+      if (notes.length) parts.push(`ملاحظات الشرائح: ${notes.slice(-5).join("، ")}`);
+      if (questions.length) parts.push(`أسئلة للمتابعة: ${questions.slice(-4).join("، ")}`);
+      el.summaryText.textContent = parts.length ? parts.join("\n\n") : sourceText.slice(0, 1200);
+    }
     saveLocal();
     toast("تم تحديث الخلاصة الأولية");
   }

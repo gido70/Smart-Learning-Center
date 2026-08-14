@@ -116,7 +116,7 @@
   function openLecture(card) {
     localStorage.setItem('slc_current_lecture_id', card.dataset.lectureId);
     localStorage.setItem('slc_current_course_id', card.dataset.courseId);
-    document.querySelector('[data-view="workspace"]')?.click();
+    window.SLCNavigation?.showView('workspace');
   }
 
   async function saveLecture() {
@@ -204,8 +204,8 @@
   $('closeLectureModal')?.addEventListener('click', closeModal);
   $('lectureModal')?.addEventListener('click', (event) => { if (event.target === $('lectureModal')) closeModal(); });
   $('saveLectureBtn')?.addEventListener('click', saveLecture);
-  document.querySelector('[data-view="replay"]')?.addEventListener('click', loadLectures);
+  document.querySelector('[data-view="live"]')?.addEventListener('click', loadLectures);
   window.slcDB?.auth.onAuthStateChange(() => loadLectures());
-  if (location.hash === '#replay') window.addEventListener('load', loadLectures);
+  if (['#replay','#live',''].includes(location.hash)) window.addEventListener('load', loadLectures);
   window.slcLecturePortal={loadLectures,openEditLecture,deleteById};
 })();
