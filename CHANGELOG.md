@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.5.4 — Unified Lecture Workspace
+- Unified live and recorded lecture entry points into one Smart Lecture Workspace while keeping legacy `#replay` links compatible.
+- Added one source chooser for live windows, local recordings, public links, signed-in external platforms, and saved lectures.
+- Moved the saved lecture library into the unified workflow without changing its Supabase records or migrations.
+- Added local evidence-based tools for precise summaries, lecture search, mind maps, quizzes, slide review, and applied reports without an external AI API.
+- Preserved the saved-lecture study view as an internal drill-down with clear return and knowledge-tool actions.
+- Improved post-session summaries by combining transcript, slide notes, highlights, and questions.
+
 ## 3.5.3 — Live Studio Final Polish
 - Added explicit on/off states for microphone, system audio, screen sharing, and fast automatic slide capture.
 - Reduced slide detection latency to two seconds with a short stability check and a manual immediate-capture button.

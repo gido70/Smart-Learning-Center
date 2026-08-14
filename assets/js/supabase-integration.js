@@ -125,7 +125,7 @@
       localStorage.setItem('slc_current_course_id', card.dataset.courseId);
       localStorage.removeItem('slc_current_lecture_id');
       if (window.slcCourseSeries) window.slcCourseSeries.open(card.dataset.courseId);
-      else document.querySelector('[data-view="workspace"]')?.click();
+      else window.SLCNavigation?.showView('workspace');
     }));
     container.querySelectorAll('.course-delete').forEach((button) => button.addEventListener('click', async () => {
       const card = button.closest('[data-course-id]');

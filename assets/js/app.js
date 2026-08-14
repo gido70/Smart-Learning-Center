@@ -1,6 +1,7 @@
 const $=(s)=>document.querySelector(s), $$=(s)=>document.querySelectorAll(s);
 const views=$$('.view'), navItems=$$('.nav-item[data-view]');
 function showView(id){views.forEach(v=>v.classList.toggle('active',v.id===id));navItems.forEach(n=>n.classList.toggle('active',n.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'});$('#sidebar').classList.remove('open');location.hash=id==='dashboard'?'':id}
+window.SLCNavigation={showView};
 navItems.forEach(n=>n.addEventListener('click',()=>showView(n.dataset.view)));$$('[data-go]').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.go)));
 $('#menuBtn').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
 const modal=$('#addModal');function openModal(){modal.classList.add('open');modal.setAttribute('aria-hidden','false')}function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
@@ -23,7 +24,10 @@ $('#microCards').innerHTML=micro.map((x,i)=>`<article class="micro-card"><div cl
 const projects=[['أكاديمية الفلاح','7 مفاهيم مكتملة · 3 تحتاج مراجعة',['✓ Authentication','✓ RLS Policies','◌ Notifications']],['مركز التعلّم الذكي','12 مفهوماً · 5 مصادر جديدة',['✓ Knowledge Inbox','◌ Live Mode','◌ Semantic Search']],['حين تنطق الصور','8 مفاهيم · 4 مطبقة',['✓ Webhooks','✓ Google Sheets','◌ Auto Publishing']]];
 $('#projectCards').innerHTML=projects.map(p=>`<article class="project-card"><span class="tag green">مشروع نشط</span><h3>${p[0]}</h3><p>${p[1]}</p><div class="project-checks">${p[2].map(s=>`<span>${s}</span>`).join('')}</div><button class="btn soft" style="margin-top:14px">فتح المشروع</button></article>`).join('');
 
-const hash=location.hash.replace('#','');if(hash&&document.getElementById(hash))showView(hash);
+const requestedHash=location.hash.replace('#','');
+const hash=requestedHash==='replay'?'live':requestedHash;
+if(hash&&document.getElementById(hash))showView(hash);
+if(requestedHash==='replay')setTimeout(()=>document.getElementById('lectureLibrary')?.scrollIntoView(),180);
 
 // Learning Workspace interactions
 const watchInsideBtn=$('#watchInsideBtn'), watchOutsideBtn=$('#watchOutsideBtn'), lessonFrame=$('#lessonFrame'), embedFallback=$('#embedFallback'), embedBadge=$('#embedBadge');

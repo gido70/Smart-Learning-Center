@@ -44,7 +44,7 @@
   }
 
   function close(){const m=document.getElementById('courseSeriesModal');m?.classList.remove('open');m?.setAttribute('aria-hidden','true');}
-  function openLecture(courseId,lectureId){localStorage.setItem('slc_current_course_id',courseId);localStorage.setItem('slc_current_lecture_id',lectureId);close();document.querySelector('[data-view="workspace"]')?.click();}
+  function openLecture(courseId,lectureId){localStorage.setItem('slc_current_course_id',courseId);localStorage.setItem('slc_current_lecture_id',lectureId);close();window.SLCNavigation?.showView('workspace');}
 
   async function buildCombined(){
     const parts=currentCourse.summaries.filter(x=>x.lecture_id&&x.summary_html).map((x,i)=>`اليوم ${i+1}:\n${x.summary_html}`);

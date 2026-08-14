@@ -201,13 +201,15 @@
       if (button.dataset.resultType === 'lecture') localStorage.setItem('slc_current_lecture_id', button.dataset.resultId);
       else localStorage.removeItem('slc_current_lecture_id');
       box.classList.add('hidden');
-      document.querySelector('[data-view="workspace"]')?.click();
+      window.SLCNavigation?.showView('workspace');
     }));
   }
 
-  document.querySelector('[data-view="workspace"]')?.addEventListener('click', loadWorkspace);
+  window.addEventListener('hashchange',()=>{if(location.hash==='#workspace')loadWorkspace();});
   $('editCurrentLectureBtn')?.addEventListener('click',()=>{if(currentWorkspaceRecord?.kind==='lecture')window.slcLecturePortal?.openEditLecture(currentWorkspaceRecord.id);});
-  $('deleteCurrentLectureBtn')?.addEventListener('click',async()=>{if(currentWorkspaceRecord?.kind!=='lecture')return;const ok=await window.slcLecturePortal?.deleteById(currentWorkspaceRecord.id);if(ok){localStorage.removeItem('slc_current_lecture_id');document.querySelector('[data-view="replay"]')?.click();}});
+  $('deleteCurrentLectureBtn')?.addEventListener('click',async()=>{if(currentWorkspaceRecord?.kind!=='lecture')return;const ok=await window.slcLecturePortal?.deleteById(currentWorkspaceRecord.id);if(ok){localStorage.removeItem('slc_current_lecture_id');window.SLCNavigation?.showView('live');setTimeout(()=>$('lectureLibrary')?.scrollIntoView({behavior:'smooth'}),180);}});
+  $('backToUnifiedLectureBtn')?.addEventListener('click',()=>{window.SLCNavigation?.showView('live');setTimeout(()=>$('lectureLibrary')?.scrollIntoView({behavior:'smooth'}),180);});
+  $('openKnowledgeToolsBtn')?.addEventListener('click',()=>{window.SLCNavigation?.showView('live');setTimeout(()=>$('lectureKnowledgeTools')?.scrollIntoView({behavior:'smooth'}),180);});
   let debounce;
   $('globalSearch')?.addEventListener('input', (event) => {
     clearTimeout(debounce);
