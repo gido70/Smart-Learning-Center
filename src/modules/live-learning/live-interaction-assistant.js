@@ -89,9 +89,11 @@
   }
 
   function addSuggestion(item) {
-    const duplicate = state.suggestions.some((saved) =>
-      saved.type === item.type && saved.text === item.text && Math.abs(saved.at_seconds - item.at_seconds) < 60
-    );
+    const signature = focusPhrase(item.excerpt || item.text).toLowerCase();
+    const duplicate = state.suggestions.some((saved) => {
+      const savedSignature = focusPhrase(saved.excerpt || saved.text).toLowerCase();
+      return saved.text === item.text || (signature && signature === savedSignature && Math.abs(saved.at_seconds - item.at_seconds) < 180);
+    });
     if (duplicate) return;
     state.suggestions.push({
       id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -288,6 +290,26 @@
     state.recognition?.stop();
   }
 
+  function searchLectureContext() {
+    const input = $("lectureHelperInput");
+    const result = $("lectureHelperResult");
+    const query = compactText(input?.value, 80).toLowerCase();
+    if (!result) return;
+    if (query.length < 2) {
+      result.textContent = "اكتب كلمة أو مفهومًا محددًا للبحث داخل محتوى الجلسة الحالية.";
+      return;
+    }
+    const transcriptMatches = state.transcript.split(/[.!؟\n]/).map((part) => part.trim()).filter((part) => part.toLowerCase().includes(query)).slice(0, 3);
+    const sourceMatches = state.suggestions.filter((item) => `${item.excerpt} ${item.text}`.toLowerCase().includes(query)).slice(0, 3);
+    const lines = [
+      ...transcriptMatches.map((text) => `حديث المحاضر: ${text}`),
+      ...sourceMatches.map((item) => `${item.source === "slide" ? `الشريحة ${item.slide_number || ""}` : "حديث المحاضر"} (${formatTime(item.at_seconds)}): ${item.excerpt}`)
+    ];
+    result.innerHTML = lines.length
+      ? `${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}<p><strong>صياغة مقترحة لك:</strong> ما العلاقة بين «${escapeHtml(query)}» والنقطة السابقة؟ أو هل يمكن إعطاء مثال تطبيقي عليها؟</p>`
+      : "لم يظهر هذا المفهوم في النص أو الشرائح المحللة حتى الآن.";
+  }
+
   function beginSession() {
     stopListening();
     state.transcript = "";
@@ -352,6 +374,10 @@
     $("aiAnalyzeSlideBtn")?.addEventListener("click", () => analyzeCurrentSlide(true));
     $("aiClearAssistantBtn")?.addEventListener("click", clearAssistant);
     $("aiSuggestionList")?.addEventListener("click", handleSuggestionAction);
+    $("aiSpeechSuggestionList")?.addEventListener("click", handleSuggestionAction);
+    $("aiSlideSuggestionList")?.addEventListener("click", handleSuggestionAction);
+    $("lectureHelperBtn")?.addEventListener("click", searchLectureContext);
+    $("lectureHelperInput")?.addEventListener("keydown", (event) => { if (event.key === "Enter") searchLectureContext(); });
     $("aiSpeechLanguage")?.addEventListener("change", () => {
       if (state.listening) {
         state.listening = false;

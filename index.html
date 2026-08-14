@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=3.0.1" />
+  <link rel="stylesheet" href="assets/css/app.css?v=3.5.3" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -165,6 +165,7 @@
           </div>
           <div class="live-head-actions">
             <span class="live-save-state" id="liveSaveState">● الحفظ المحلي جاهز</span>
+            <button class="btn ghost hidden" id="restoreLiveDraftBtn">↩ استعادة آخر مسودة</button>
             <button class="btn primary" id="startLiveBtn">● بدء الجلسة</button>
             <button class="btn soft" id="pauseLiveBtn" disabled>⏸ إيقاف مؤقت</button>
             <button class="btn soft" id="resumeLiveBtn" disabled>▶ استئناف</button>
@@ -213,11 +214,12 @@
                 <button id="exitFullscreenPreviewBtn" class="hidden" title="الخروج من الشاشة الكاملة">خروج ✕</button>
               </div>
               <div class="stage-controls studio-controls collapsed" id="studioSourceTools">
-                <button id="microphoneBtn">🎤 إضافة صوتي للتسجيل</button>
-                <button id="systemAudioBtn">🔊 اختيار صوت المحاضرة</button>
-                <button id="shareScreenBtn">🖥 اختيار نافذة Zoom</button>
+                <button id="microphoneBtn" aria-pressed="false">🎤 صوتي: متوقف</button>
+                <button id="systemAudioBtn" aria-pressed="false">🔊 صوت المحاضرة: متوقف</button>
+                <button id="shareScreenBtn" aria-pressed="false">🖥 مشاركة العرض: متوقفة</button>
                 <button id="reselectScreenBtn">↻ تغيير نافذة Zoom</button>
-                <button id="captureSlideBtn">📸 حفظ الشريحة</button>
+                <button id="captureSlideBtn">📸 تحديث الشريحة الآن</button>
+                <button id="autoCaptureBtn" aria-pressed="true">⚡ الالتقاط التلقائي: سريع</button>
                 <button id="sourceLanguageBtn">🌐 لغة المصدر</button>
                 <button id="studioSettingsBtn">⚙ الإعدادات</button>
               </div>
@@ -300,11 +302,16 @@
               <p class="ai-privacy-note">التفريغ المباشر يستخدم خدمة التعرف على الكلام المتاحة في Chrome/Edge بعد موافقتك على الميكروفون. تحليل الشرائح يعمل داخل المتصفح ولا يحتاج مفتاحًا سريًا.</p>
               <div class="ai-live-transcript" id="aiLiveTranscript">سيظهر التفريغ هنا بعد تشغيل الاستماع.</div>
               <div class="ai-suggestion-columns">
-                <section><div class="ai-suggestion-title"><strong>من العرض التقديمي</strong><small>أسئلة ناتجة من الشرائح.</small></div><div class="ai-suggestion-list" id="aiSlideSuggestionList"></div></section>
-                <section><div class="ai-suggestion-title"><strong>من حديث المحاضر</strong><small>أسئلة ومداخلات من الكلام.</small></div><div class="ai-suggestion-list" id="aiSpeechSuggestionList"></div></section>
+                <section><div class="ai-suggestion-title"><strong>من حديث المحاضر</strong><small>أسئلة ومداخلات مرتبطة بالكلام والتوقيت.</small></div><div class="ai-suggestion-list" id="aiSpeechSuggestionList"></div></section>
+                <section><div class="ai-suggestion-title"><strong>من العرض التقديمي</strong><small>أسئلة مرتبطة بالشريحة المعروضة.</small></div><div class="ai-suggestion-list" id="aiSlideSuggestionList"></div></section>
               </div>
               <div class="ai-suggestion-title"><strong>أفضل ما يستحق المناقشة بعد المحاضرة</strong><small>اقتراحات قليلة منتقاة للمشاركة أو الفهم.</small></div>
               <div class="ai-suggestion-list" id="aiSuggestionList"></div>
+              <div class="lecture-understanding-helper">
+                <label class="field-label" for="lectureHelperInput">مساعد الفهم من محتوى المحاضرة</label>
+                <div class="chat-mini"><input id="lectureHelperInput" placeholder="اكتب كلمة أو مفهومًا ورد في المحاضرة..."><button id="lectureHelperBtn">ابحث</button></div>
+                <div class="live-answer" id="lectureHelperResult">يعرض مواضع الكلمة في حديث المحاضر والشرائح فقط، دون إنشاء إجابة مصطنعة.</div>
+              </div>
             </article>
 
             <article class="panel">
@@ -482,16 +489,16 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.5.2"></script>
-  <script src="assets/js/supabase-integration.js?v=3.5.2"></script>
-  <script src="src/modules/live-learning/session-controls.js?v=3.5.2"></script>
+  <script src="assets/js/app.js?v=3.5.3"></script>
+  <script src="assets/js/supabase-integration.js?v=3.5.3"></script>
+  <script src="src/modules/live-learning/session-controls.js?v=3.5.3"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="assets/js/live-studio.js?v=3.5.2"></script>
-  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.5.2"></script>
-  <script src="assets/js/workspace.js?v=3.5.2"></script>
-  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.2"></script>
-  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.2"></script>
-  <script src="src/modules/course-series/course-series.js?v=3.5.2"></script>
+  <script src="assets/js/live-studio.js?v=3.5.3"></script>
+  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.5.3"></script>
+  <script src="assets/js/workspace.js?v=3.5.3"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.3"></script>
+  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.3"></script>
+  <script src="src/modules/course-series/course-series.js?v=3.5.3"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>

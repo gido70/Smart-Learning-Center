@@ -15,11 +15,11 @@ for token in ['watchInsideBtn','watchOutsideBtn','savePointBtn','lessonNotes','q
 if 'dir="rtl"' not in index: errors.append('دعم RTL مفقود')
 for token in ['addLectureBtn','lectureModal','lectureEditingId','editCurrentLectureBtn','deleteCurrentLectureBtn','localSummarizeBtn','notebookLmExportBtn','lecture-portal.js','lecture-summarizer.js','course-series.js','liveCourseSelect','courseFilters','courseSearchInput']:
     if token not in index: errors.append(f'بوابة المحاضرات مفقودة: {token}')
-for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js','liveAiCompanion','aiToggleListeningBtn','aiAnalyzeSlideBtn','aiSuggestionList','aiSlideSuggestionList','aiSpeechSuggestionList','exitFullscreenPreviewBtn','finish-live-scroll','live-interaction-assistant.js']:
+for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js','liveAiCompanion','aiToggleListeningBtn','aiAnalyzeSlideBtn','aiSuggestionList','aiSlideSuggestionList','aiSpeechSuggestionList','exitFullscreenPreviewBtn','finish-live-scroll','live-interaction-assistant.js','autoCaptureBtn','restoreLiveDraftBtn','lectureHelperInput']:
     if token not in index: errors.append(f'تحكم الجلسة المباشرة مفقود: {token}')
 live_studio=(root/'assets/js/live-studio.js').read_text(encoding='utf-8')
 assistant=(root/'src/modules/live-learning/live-interaction-assistant.js').read_text(encoding='utf-8')
-for token in ['clearCompletedWorkspace','SLCLiveInteractionAssistant?.endSession?.()','restoreSession?.(draft.interaction_assistant']:
+for token in ['clearCompletedWorkspace','SLCLiveInteractionAssistant?.endSession?.()','restoreSession?.(draft.interaction_assistant','toggleAutoCapture','🎤 صوتي: متوقف','slc_live_draft_available']:
     if token not in live_studio: errors.append(f'تنظيف الجلسة المباشرة مفقود: {token}')
 for token in ['localStorage.removeItem(STORAGE_KEY)','restoreSession','endSession']:
     if token not in assistant: errors.append(f'عزل مساعد الجلسة مفقود: {token}')

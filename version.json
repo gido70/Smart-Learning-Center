@@ -1,9 +1,9 @@
 {
-  "version": "3.5.2",
+  "version": "3.5.3",
   "build": "2026-08-09-personal-lecture-portal",
   "supabase_integration": true,
   "live_studio": true,
   "lecture_portal": true,
   "ai_api_in_frontend": false,
-  "notes": "Personal lecture portal with Supabase RLS, unified search, external-platform fallback, and a no-API ChatGPT summary workflow."
+  "notes": "Live Studio usability release: explicit source toggles, fast stable slide capture, clean draft closing, horizontal grounded suggestions, and a local lecture-context helper."
 }
