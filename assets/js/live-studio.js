@@ -133,6 +133,7 @@
     answer: $("liveAnswer"),
     exportJson: $("exportLiveJsonBtn"),
     exportTxt: $("exportLiveTxtBtn"),
+    exportAudio: $("exportLiveAudioBtn"),
     finishModal: $("finishLiveModal"),
     closeFinishModal: $("closeFinishLiveModal"),
     confirmFinish: $("confirmFinishLiveBtn"),
@@ -791,7 +792,7 @@
       if (el.saveState) el.saveState.textContent = "تعذر حفظ النسخة الكاملة؛ نزّل الملفات قبل مغادرة الصفحة";
     }
     await deleteStoredSession(DRAFT_KEY);
-    if (state.recordingBlob) download(`smart-learning-recording-${Date.now()}.webm`, state.recordingBlob, state.recordingBlob.type);
+    if (state.recordingBlob && el.saveState) el.saveState.textContent = "تم حفظ الصوت مؤقتًا على هذا الجهاز — نزّله عند الحاجة";
     if (!window.slcDB) {
       setFinishBusy(false);
       await clearCompletedWorkspace();
@@ -802,7 +803,7 @@
     const file=buildLectureFile();
     const {data:{user}}=await window.slcDB.auth.getUser();
     if (!user) { setFinishBusy(false); return toast('سجّل الدخول أولًا.'); }
-    const {data:lecture,error}=await window.slcDB.from('slc_lectures').insert({owner_id:user.id,course_id:courseId,title,source_url:file.recording_url||null,source_type:'live',open_mode:file.recording_url?'external':'auto',module_name:'محاضرة مباشرة',lecture_order:file.lecture_order,duration_minutes:Math.max(1,Math.round(file.duration_seconds/60)),status:'completed',session_kind:'live',notes:file.highlights.join('\n'),archived_at:new Date().toISOString(),live_payload:{mode:file.mode,started_at:file.started_at,duration_seconds:file.duration_seconds,timeline:file.timeline,questions:file.questions,highlights:file.highlights,quick_summary:file.quick_summary}}).select('id').single();
+    const {data:lecture,error}=await window.slcDB.from('slc_lectures').insert({owner_id:user.id,course_id:courseId,title,source_url:file.recording_url||null,source_type:'live',open_mode:file.recording_url?'external':'auto',module_name:'محاضرة مباشرة',lecture_order:file.lecture_order,duration_minutes:Math.max(1,Math.round(file.duration_seconds/60)),status:'completed',session_kind:'live',notes:file.highlights.join('\n'),transcript_text:file.transcript||null,archived_at:new Date().toISOString(),live_payload:{mode:file.mode,started_at:file.started_at,duration_seconds:file.duration_seconds,timeline:file.timeline,questions:file.questions,highlights:file.highlights,quick_summary:file.quick_summary}}).select('id').single();
     if(error){setFinishBusy(false);return toast(`تعذر حفظ المحاضرة: ${error.message}`);}
     const slides=await uploadSlides(user.id,lecture.id);
     await window.slcDB.from('slc_lectures').update({live_payload:{...file,slides,slides_count:slides.length}}).eq('id',lecture.id);
@@ -906,7 +907,7 @@
         unchangedChecks += 1;
         if (unchangedChecks % 5 === 0 && el.audioStatus) el.audioStatus.textContent = `مراقبة العرض تعمل · آخر فحص ${formatTime(elapsed())}`;
       }
-    }, 1500);
+    }, 900);
   }
 
   function toggleAutoCapture() {
@@ -1088,6 +1089,9 @@
       "=== الخلاصة ===",
       data.quick_summary,
       "",
+      "=== النص الكامل للمحاضرة ===",
+      data.transcript || "لا يوجد نص محفوظ",
+      "",
       "=== الخط الزمني ===",
       ...data.timeline.map((event) => `${formatTime(event.at_seconds)} — ${event.title}: ${event.text || ""}`),
       "",
@@ -1098,6 +1102,16 @@
       ...data.questions.map((item) => `${formatTime(item.at_seconds)} — ${item.question}`)
     ];
     download(`smart-learning-live-${Date.now()}.txt`, lines.join("\n"), "text/plain;charset=utf-8");
+  }
+
+  async function exportAudio() {
+    let blob = state.recordingBlob;
+    if (!blob) {
+      const saved = await readStoredSession(LAST_SESSION_KEY).catch(() => null);
+      blob = saved?.recording_blob || null;
+    }
+    if (!blob) return toast("لا توجد نسخة صوت محلية متاحة على هذا الجهاز");
+    download(`smart-learning-recording-${Date.now()}.webm`, blob, blob.type || "audio/webm");
   }
 
   window.addEventListener("slc:assistant-save-suggestion", (event) => {
@@ -1184,6 +1198,7 @@
   el.nextSlide?.addEventListener("click", () => { if (viewedSlideIndex < state.slides.length - 1) { viewedSlideIndex += 1; renderSlideViewer(); } });
   el.exportJson?.addEventListener("click", exportJson);
   el.exportTxt?.addEventListener("click", exportTxt);
+  el.exportAudio?.addEventListener("click", exportAudio);
   el.slideNotes?.addEventListener("input", () => {
     if (state.slides.length) state.slides[state.slides.length - 1].notes = el.slideNotes.value;
     saveLocal();
