@@ -34,6 +34,8 @@ for token in ['clearCompletedWorkspace','SLCLiveInteractionAssistant?.endSession
     if token not in live_studio: errors.append(f'تنظيف الجلسة المباشرة مفقود: {token}')
 for token in ['localStorage.removeItem(STORAGE_KEY)','restoreSession','endSession']:
     if token not in assistant: errors.append(f'عزل مساعد الجلسة مفقود: {token}')
+for token in ['getSystemAudioTrack','recognition.start(audioTrack)','فعّل «صوت المحاضرة» أولًا','لن يُفتح الميكروفون']:
+    if token not in (live_studio + assistant): errors.append(f'عزل صوت المحاضرة عن الميكروفون مفقود: {token}')
 if errors:
     print('SMOKE TEST FAILED')
     print('\n'.join(errors))

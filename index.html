@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=3.6.1" />
+  <link rel="stylesheet" href="assets/css/app.css?v=3.6.2" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -306,7 +306,7 @@
                 <span class="tag green" id="aiCompanionStatus">جاهز</span>
               </div>
               <div class="ai-companion-controls">
-                <button class="btn primary" id="aiToggleListeningBtn">🎧 تشغيل الاستماع والتفريغ</button>
+                <button class="btn primary" id="aiToggleListeningBtn">🎧 تفريغ صوت المحاضرة فقط</button>
                 <select id="aiSpeechLanguage" aria-label="لغة التفريغ">
                   <option value="ar-SA">العربية</option>
                   <option value="en-US">English</option>
@@ -317,7 +317,7 @@
                 <button class="btn soft" id="aiAnalyzeSlideBtn">🖼 تحليل الشريحة الحالية</button>
                 <button class="btn ghost" id="aiClearAssistantBtn">مسح جلسة المساعد</button>
               </div>
-              <p class="ai-privacy-note">التفريغ المباشر يستخدم خدمة التعرف على الكلام المتاحة في Chrome/Edge بعد موافقتك على الميكروفون. تحليل الشرائح يعمل داخل المتصفح ولا يحتاج مفتاحًا سريًا.</p>
+              <p class="ai-privacy-note">التفريغ المباشر يستخدم مسار «صوت المحاضرة» المشترك من Zoom أو YouTube. لا يفتح ميكروفون الغرفة تلقائيًا، وإذا لم يدعم المتصفح تمرير صوت النظام يتوقف بدل التقاط صوتك.</p>
               <div class="ai-live-transcript" id="aiLiveTranscript">سيظهر التفريغ هنا بعد تشغيل الاستماع.</div>
               <div class="ai-suggestion-columns">
                 <section><div class="ai-suggestion-title"><strong>من حديث المحاضر</strong><small>أسئلة ومداخلات مرتبطة بالكلام والتوقيت.</small></div><div class="ai-suggestion-list" id="aiSpeechSuggestionList"></div></section>
@@ -599,19 +599,19 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.6.1"></script>
-  <script src="assets/js/supabase-integration.js?v=3.6.1"></script>
-  <script src="src/modules/live-learning/session-controls.js?v=3.6.1"></script>
+  <script src="assets/js/app.js?v=3.6.2"></script>
+  <script src="assets/js/supabase-integration.js?v=3.6.2"></script>
+  <script src="src/modules/live-learning/session-controls.js?v=3.6.2"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="assets/js/live-studio.js?v=3.6.1"></script>
-  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.6.1"></script>
-  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.6.1"></script>
-  <script src="assets/js/workspace.js?v=3.6.1"></script>
-  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.6.1"></script>
-  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.6.1"></script>
-  <script src="src/modules/course-series/course-series.js?v=3.6.1"></script>
-  <script src="src/modules/lecture-workspace/smart-lecture-guide.js?v=3.6.1"></script>
-  <script src="src/modules/digital-product-camp/digital-product-camp.js?v=3.6.1"></script>
+  <script src="assets/js/live-studio.js?v=3.6.2"></script>
+  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.6.2"></script>
+  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.6.2"></script>
+  <script src="assets/js/workspace.js?v=3.6.2"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.6.2"></script>
+  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.6.2"></script>
+  <script src="src/modules/course-series/course-series.js?v=3.6.2"></script>
+  <script src="src/modules/lecture-workspace/smart-lecture-guide.js?v=3.6.2"></script>
+  <script src="src/modules/digital-product-camp/digital-product-camp.js?v=3.6.2"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>

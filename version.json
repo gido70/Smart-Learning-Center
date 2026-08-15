@@ -1,9 +1,9 @@
 {
-  "version": "3.6.1",
-  "build": "2026-08-15-digital-product-camp-guide",
+  "version": "3.6.2",
+  "build": "2026-08-15-system-audio-transcription",
   "supabase_integration": true,
   "live_studio": true,
   "lecture_portal": true,
   "ai_api_in_frontend": false,
-  "notes": "Added a practical in-page guide for using every part of the digital product camp workspace."
+  "notes": "Prevented live transcription from silently opening the room microphone and routed it to the shared lecture-audio track when supported."
 }

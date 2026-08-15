@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.6.2 — System Audio-Only Transcription
+- Routed live transcription to the shared lecture-audio track instead of silently opening the room microphone.
+- Required «صوت المحاضرة» to be active before transcription can start.
+- Added a safe browser-compatibility failure that keeps the external microphone closed.
+
 ## 3.6.1 — Digital Product Camp Guide
 - Added an in-page Arabic guide with a three-step start, section-by-section explanations, and contextual navigation.
 - Added a complete worked example that turns a camp lecture into learning, a product decision, and a measurable next action.

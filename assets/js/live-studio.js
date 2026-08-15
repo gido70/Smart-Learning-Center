@@ -471,6 +471,7 @@
     if (state.systemAudioStream?.getAudioTracks().some((track) => track.readyState === "live")) {
       controls.stopAllTracks([state.systemAudioStream]);
       state.systemAudioStream = null;
+      window.dispatchEvent(new CustomEvent("slc:system-audio-changed", { detail: { track: null } }));
       el.systemAudio.classList.remove("active");
       el.systemAudio.setAttribute("aria-pressed", "false");
       el.systemAudio.textContent = "🔊 صوت المحاضرة: متوقف";
@@ -493,12 +494,15 @@
       }
       displayStream.getVideoTracks().forEach((track) => track.stop());
       state.systemAudioStream = displayStream;
+      window.dispatchEvent(new CustomEvent("slc:system-audio-changed", { detail: { track: audioTracks[0] } }));
       el.systemAudio.classList.add("active");
       el.systemAudio.setAttribute("aria-pressed", "true");
       el.systemAudio.textContent = "🔊 صوت المحاضرة: يعمل — اضغط للإيقاف";
       el.captureEmpty.classList.add("hidden");
       addEvent("audio", "تفعيل صوت النظام", "بدأ التقاط صوت النظام (صوت Zoom مثلاً).", "🔊");
       audioTracks[0]?.addEventListener("ended", () => {
+        state.systemAudioStream = null;
+        window.dispatchEvent(new CustomEvent("slc:system-audio-changed", { detail: { track: null } }));
         el.systemAudio.classList.remove("active");
         el.systemAudio.setAttribute("aria-pressed", "false");
         el.systemAudio.textContent = "🔊 صوت المحاضرة: متوقف";
@@ -1119,6 +1123,10 @@
     if (lastEvent) lastEvent.assistant_id = item.id;
     saveLocal();
   });
+
+  window.SLCLiveAudio = {
+    getSystemAudioTrack: () => state.systemAudioStream?.getAudioTracks()?.find((track) => track.readyState === "live") || null
+  };
 
   el.modeSwitch?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-capture-mode]");
