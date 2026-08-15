@@ -26,7 +26,7 @@ for token in ['slc_digital_product_camp_v1','ميثاق المنتج','من ال
     if token not in camp: errors.append(f'وظيفة مختبر المنتج الرقمي مفقودة: {token}')
 for token in ['campGuideBtn','campGuideModal','ابدأ في 3 خطوات','مثال عملي','campGuideOpenLecture']:
     if token not in camp: errors.append(f'دليل مختبر المنتج الرقمي مفقود: {token}')
-for token in ['campAnalyzeLecture','readLastLecture','rankIdeas','campAssistantOpportunity','اعتماد وحفظ مخرج المحاضرة']:
+for token in ['campAnalyzeLecture','campLectureSelect','loadCampLectures','readLastLecture','rankIdeas','campAssistantOpportunity','اعتماد وحفظ مخرج المحاضرة']:
     if token not in camp: errors.append(f'مساعد تحويل المعرفة إلى منتج مفقود: {token}')
 for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js','liveAiCompanion','aiToggleListeningBtn','aiAnalyzeSlideBtn','aiSuggestionList','aiSlideSuggestionList','aiSpeechSuggestionList','exitFullscreenPreviewBtn','finish-live-scroll','live-interaction-assistant.js','autoCaptureBtn','restoreLiveDraftBtn','lectureHelperInput']:
     if token not in index: errors.append(f'تحكم الجلسة المباشرة مفقود: {token}')
@@ -34,6 +34,8 @@ live_studio=(root/'assets/js/live-studio.js').read_text(encoding='utf-8')
 assistant=(root/'src/modules/live-learning/live-interaction-assistant.js').read_text(encoding='utf-8')
 for token in ['clearCompletedWorkspace','SLCLiveInteractionAssistant?.endSession?.()','restoreSession?.(draft.interaction_assistant','toggleAutoCapture','🎤 صوتي: متوقف','slc_live_draft_available']:
     if token not in live_studio: errors.append(f'تنظيف الجلسة المباشرة مفقود: {token}')
+for token in ['exportLiveAudioBtn','النص الكامل للمحاضرة','transcript_text:file.transcript','900']:
+    if token not in (index + live_studio): errors.append(f'حفظ وأرشفة المحاضرة مفقود: {token}')
 for token in ['localStorage.removeItem(STORAGE_KEY)','restoreSession','endSession']:
     if token not in assistant: errors.append(f'عزل مساعد الجلسة مفقود: {token}')
 for token in ['getSystemAudioTrack','recognition.start(audioTrack)','فعّل «صوت المحاضرة» أولًا','لن يُفتح الميكروفون']:
