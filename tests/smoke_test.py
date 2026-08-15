@@ -24,6 +24,8 @@ for token in ['data-view="product-camp"','id="product-camp"','digitalProductCamp
 camp=(root/'src/modules/digital-product-camp/digital-product-camp.js').read_text(encoding='utf-8') if (root/'src/modules/digital-product-camp/digital-product-camp.js').exists() else ''
 for token in ['slc_digital_product_camp_v1','ميثاق المنتج','من المحاضرة إلى المنتج','lectureOutputs']:
     if token not in camp: errors.append(f'وظيفة مختبر المنتج الرقمي مفقودة: {token}')
+for token in ['campGuideBtn','campGuideModal','ابدأ في 3 خطوات','مثال عملي','campGuideOpenLecture']:
+    if token not in camp: errors.append(f'دليل مختبر المنتج الرقمي مفقود: {token}')
 for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js','liveAiCompanion','aiToggleListeningBtn','aiAnalyzeSlideBtn','aiSuggestionList','aiSlideSuggestionList','aiSpeechSuggestionList','exitFullscreenPreviewBtn','finish-live-scroll','live-interaction-assistant.js','autoCaptureBtn','restoreLiveDraftBtn','lectureHelperInput']:
     if token not in index: errors.append(f'تحكم الجلسة المباشرة مفقود: {token}')
 live_studio=(root/'assets/js/live-studio.js').read_text(encoding='utf-8')
