@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.6.1 — Digital Product Camp Guide
+- Added an in-page Arabic guide with a three-step start, section-by-section explanations, and contextual navigation.
+- Added a complete worked example that turns a camp lecture into learning, a product decision, and a measurable next action.
+- Documented completion rules, data-storage limits, and the purpose of every camp workspace section.
+
 ## 3.6.0 — Digital Product Camp
 - Added a practical 47-day digital-product camp workspace.
 - Added a product charter, four-phase roadmap, and execution checklist.
