@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.6.0 — Digital Product Camp
+- Added a practical 47-day digital-product camp workspace.
+- Added a product charter, four-phase roadmap, and execution checklist.
+- Added a lecture-to-product log for learned ideas, decisions, and next actions.
+- Kept progress local with no new SQL or direct AI service.
+
 ## 3.5.5 — Smart Lecture User Guide
 - Added a clear in-page Arabic operating guide dedicated to the Smart Lecture Workspace.
 - Added a three-step quick start, source explanations, live controls, save decisions, and post-lecture knowledge tools.

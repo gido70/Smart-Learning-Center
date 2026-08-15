@@ -19,6 +19,11 @@ for token in ['lectureSourceGrid','lectureKnowledgeTools','knowledgeToolOutput',
     if token not in index: errors.append(f'مساحة المحاضرة الموحدة مفقودة: {token}')
 if 'data-view="replay"' in index: errors.append('واجهة المحاضرات المسجلة القديمة ما زالت ظاهرة بدل الدمج')
 if "requestedHash==='replay'?'live'" not in app: errors.append('توافق رابط #replay القديم مفقود')
+for token in ['data-view="product-camp"','id="product-camp"','digitalProductCamp','digital-product-camp.js']:
+    if token not in index: errors.append(f'مختبر المنتج الرقمي مفقود: {token}')
+camp=(root/'src/modules/digital-product-camp/digital-product-camp.js').read_text(encoding='utf-8') if (root/'src/modules/digital-product-camp/digital-product-camp.js').exists() else ''
+for token in ['slc_digital_product_camp_v1','ميثاق المنتج','من المحاضرة إلى المنتج','lectureOutputs']:
+    if token not in camp: errors.append(f'وظيفة مختبر المنتج الرقمي مفقودة: {token}')
 for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js','liveAiCompanion','aiToggleListeningBtn','aiAnalyzeSlideBtn','aiSuggestionList','aiSlideSuggestionList','aiSpeechSuggestionList','exitFullscreenPreviewBtn','finish-live-scroll','live-interaction-assistant.js','autoCaptureBtn','restoreLiveDraftBtn','lectureHelperInput']:
     if token not in index: errors.append(f'تحكم الجلسة المباشرة مفقود: {token}')
 live_studio=(root/'assets/js/live-studio.js').read_text(encoding='utf-8')

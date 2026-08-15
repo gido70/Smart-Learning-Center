@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=3.5.5" />
+  <link rel="stylesheet" href="assets/css/app.css?v=3.6.0" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -30,6 +30,7 @@
         <button class="nav-item" data-view="inbox"><span>⇩</span> صندوق المعرفة</button>
         <button class="nav-item" data-view="micro"><span>⚡</span> التعلّم السريع</button>
         <button class="nav-item" data-view="projects"><span>⌘</span> المشروعات</button>
+        <button class="nav-item" data-view="product-camp"><span>◆</span> مخيم المنتج الرقمي</button>
         <button class="nav-item" data-view="graph"><span>✦</span> خريطة المعرفة</button>
         <button class="nav-item" data-view="review"><span>↻</span> مركز المراجعة</button>
         <button class="nav-item" data-view="factory"><span>✎</span> مصنع المحتوى</button>
@@ -438,6 +439,9 @@
       <section class="view" id="inbox"><div class="page-head"><div><span class="eyebrow">Knowledge Inbox</span><h2>صندوق المعرفة</h2><p>ألصق أي رابط الآن، واتخذ قرار المعالجة لاحقاً دون أن تضيع الفكرة.</p></div><button class="btn primary" id="openAddModal">＋ إضافة مصدر</button></div><div class="inbox-board" id="inboxBoard"></div></section>
       <section class="view" id="micro"><div class="page-head"><div><span class="eyebrow">Micro Learning Center</span><h2>التعلّم السريع</h2><p>حوّل Shorts وReels وTikTok وX إلى كبسولات معرفة قابلة للبحث والتجميع.</p></div><button class="btn primary">＋ إضافة رابط قصير</button></div><div class="platform-strip"><span>YouTube Shorts</span><span>Instagram Reels</span><span>Facebook Reels</span><span>TikTok</span><span>X</span></div><div class="micro-grid" id="microCards"></div></section>
       <section class="view" id="projects"><div class="page-head"><div><span class="eyebrow">Project Intelligence</span><h2>ربط التعلّم بالمشروعات</h2><p>اعرف ما الذي تعلمته وما الذي ينقص كل مشروع قبل التنفيذ.</p></div><button class="btn primary">＋ مشروع جديد</button></div><div class="project-grid" id="projectCards"></div></section>
+      <section class="view" id="product-camp">
+        <div id="digitalProductCamp"></div>
+      </section>
       <section class="view" id="graph"><div class="page-head"><div><span class="eyebrow">Knowledge Graph</span><h2>خريطة المعرفة</h2><p>رؤية بصرية للمفاهيم التي تعلمتها وعلاقاتها ومستوى إتقانك.</p></div></div><article class="panel graph-panel"><div class="knowledge-map"><span class="node core">Supabase</span><span class="node n1">Auth</span><span class="node n2">RLS</span><span class="node n3">Storage</span><span class="node n4">JWT</span><span class="node n5">Policies</span><span class="node n6">Sessions</span><i class="line l1"></i><i class="line l2"></i><i class="line l3"></i><i class="line l4"></i><i class="line l5"></i><i class="line l6"></i></div><div class="legend"><span><i class="known"></i> متقن</span><span><i class="review"></i> يحتاج مراجعة</span><span><i class="new"></i> لم يبدأ</span></div></article></section>
       <section class="view" id="review"><div class="page-head"><div><span class="eyebrow">Spaced Repetition</span><h2>مركز المراجعة</h2><p>راجع ما تعلمته في الوقت المناسب قبل أن تنساه.</p></div><button class="btn primary">ابدأ جلسة المراجعة</button></div><div class="review-grid"><article class="panel big-flash"><span>بطاقة 1 من 4</span><h3>ما الفرق بين Authentication وAuthorization؟</h3><button class="btn soft">إظهار الإجابة</button><div class="rating-row"><button>نسيت</button><button>صعب</button><button>جيد</button><button>سهل</button></div></article><article class="panel"><h3>جدول المراجعة</h3><div class="calendar-bars"><div><span>اليوم</span><b style="width:76%"></b><em>4</em></div><div><span>غداً</span><b style="width:48%"></b><em>2</em></div><div><span>هذا الأسبوع</span><b style="width:88%"></b><em>9</em></div></div></article></div></section>
       <section class="view" id="factory"><div class="page-head"><div><span class="eyebrow">Knowledge Factory</span><h2>مصنع المحتوى</h2><p>حوّل معرفتك الناضجة إلى محتوى أصلي يفيد الآخرين.</p></div></div><div class="factory-grid"><button class="factory-card"><span>📝</span><b>مقال تعليمي</b><small>من ملخص أو عدة مصادر</small></button><button class="factory-card"><span>🎬</span><b>سيناريو فيديو</b><small>Short أو فيديو طويل</small></button><button class="factory-card"><span>🎧</span><b>نص بودكاست</b><small>حوار أو حلقة فردية</small></button><button class="factory-card"><span>▤</span><b>دليل عملي</b><small>خطوات وأمثلة وأكواد</small></button><button class="factory-card"><span>❓</span><b>اختبار</b><small>أسئلة وتقييم فوري</small></button><button class="factory-card"><span>📱</span><b>منشورات اجتماعية</b><small>LinkedIn وX وInstagram</small></button></div><article class="panel maturity-panel"><h3>نضج المعرفة قبل النشر</h3><div class="maturity-flow"><span class="done">جُمعت</span><span class="done">فُهمت</span><span class="done">رُوجعت</span><span class="active">طُبقت</span><span>جاهزة للتعليم</span><span>مرجع منشور</span></div></article></section>
@@ -595,18 +599,19 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.5.5"></script>
-  <script src="assets/js/supabase-integration.js?v=3.5.5"></script>
-  <script src="src/modules/live-learning/session-controls.js?v=3.5.5"></script>
+  <script src="assets/js/app.js?v=3.6.0"></script>
+  <script src="assets/js/supabase-integration.js?v=3.6.0"></script>
+  <script src="src/modules/live-learning/session-controls.js?v=3.6.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="assets/js/live-studio.js?v=3.5.5"></script>
-  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.5.5"></script>
-  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.5.5"></script>
-  <script src="assets/js/workspace.js?v=3.5.5"></script>
-  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.5.5"></script>
-  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.5.5"></script>
-  <script src="src/modules/course-series/course-series.js?v=3.5.5"></script>
-  <script src="src/modules/lecture-workspace/smart-lecture-guide.js?v=3.5.5"></script>
+  <script src="assets/js/live-studio.js?v=3.6.0"></script>
+  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.6.0"></script>
+  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.6.0"></script>
+  <script src="assets/js/workspace.js?v=3.6.0"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.6.0"></script>
+  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.6.0"></script>
+  <script src="src/modules/course-series/course-series.js?v=3.6.0"></script>
+  <script src="src/modules/lecture-workspace/smart-lecture-guide.js?v=3.6.0"></script>
+  <script src="src/modules/digital-product-camp/digital-product-camp.js?v=3.6.0"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>
