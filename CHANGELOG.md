@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.6.3 — Camp Knowledge Assistant
+- Added one-click analysis of the latest locally saved lecture inside the Digital Product Camp.
+- Extracted the strongest lecture ideas against the product charter and prepared a reviewable decision and measurable next action.
+- Added a lecturer question and product/service opportunity hypothesis without sending data to an external AI service.
+- Kept Abdulrahman as the final decision-maker: generated content remains an editable draft until explicitly saved.
+
 ## 3.6.2 — System Audio-Only Transcription
 - Routed live transcription to the shared lecture-audio track instead of silently opening the room microphone.
 - Required «صوت المحاضرة» to be active before transcription can start.
