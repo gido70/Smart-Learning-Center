@@ -31,13 +31,30 @@
     const outside = $('watchOutsideBtn');
     if (!frame || !fallback || !badge || !outside) return;
 
+    frame.src = 'about:blank';
     outside.href = url || '#';
     fallback.querySelector('a').href = url || '#';
     const youtubeId = extractYouTubeId(url);
     const directInternal = ['youtube', 'video', 'audio', 'pdf'].includes(sourceType);
     const externalOnly = openMode === 'external';
 
-    if (externalOnly || !url) {
+    if (!url) {
+      frame.style.display = 'none';
+      fallback.classList.add('show');
+      outside.classList.add('hidden');
+      fallback.querySelector('a').classList.add('hidden');
+      const heading = fallback.querySelector('h3');
+      const note = fallback.querySelector('p');
+      if (heading) heading.textContent = 'محاضرة معرفية بلا تسجيل فيديو';
+      if (note) note.textContent = 'النص والشرائح والخلاصة محفوظة أدناه ويمكن البحث فيها ودراستها. الصوت يبقى محليًا على هذا الجهاز إذا احتفظت به.';
+      badge.textContent = '● نص وشرائح محفوظة';
+      badge.className = 'embed-badge supported';
+      return;
+    }
+
+    outside.classList.remove('hidden');
+    fallback.querySelector('a').classList.remove('hidden');
+    if (externalOnly) {
       frame.style.display = 'none';
       fallback.classList.add('show');
       badge.textContent = '● يفتح في المصدر الأصلي';
@@ -86,7 +103,7 @@
     const lectureId = localStorage.getItem('slc_current_lecture_id');
     if (lectureId) {
       const { data } = await window.slcDB.from('slc_lectures')
-        .select('id,course_id,title,source_url,source_type,open_mode,module_name,lecture_order,duration_minutes,status,notes,transcript_text,last_position_seconds,slc_courses(title,provider_name)')
+        .select('id,course_id,title,source_url,source_type,open_mode,module_name,lecture_order,duration_minutes,status,notes,transcript_text,live_payload,last_position_seconds,slc_courses(title,provider_name)')
         .eq('id', lectureId).maybeSingle();
       if (data) return { kind: 'lecture', ...data };
     }
@@ -131,7 +148,8 @@
       $('summaryResult')?.classList.add('hidden');
     }
     if ($('lessonNotes')) $('lessonNotes').value = record.notes || '';
-    if ($('transcriptInput') && record.transcript_text) $('transcriptInput').value = record.transcript_text;
+    const savedTranscript = record.transcript_text || record.live_payload?.transcript || record.live_payload?.interaction_assistant?.transcript || '';
+    if ($('transcriptInput')) $('transcriptInput').value = savedTranscript;
   }
 
   function formatSeconds(value) {
@@ -186,7 +204,7 @@
     const pattern = `%${term}%`;
     const [coursesResult, lecturesResult, summariesResult] = await Promise.all([
       window.slcDB.from('slc_courses').select('id,title,provider_name').or(`title.ilike.${pattern},provider_name.ilike.${pattern}`).limit(6),
-      window.slcDB.from('slc_lectures').select('id,course_id,title,module_name,notes,slc_courses(title,provider_name)').or(`title.ilike.${pattern},module_name.ilike.${pattern},notes.ilike.${pattern}`).limit(8),
+      window.slcDB.from('slc_lectures').select('id,course_id,title,module_name,notes,transcript_text,slc_courses(title,provider_name)').or(`title.ilike.${pattern},module_name.ilike.${pattern},notes.ilike.${pattern},transcript_text.ilike.${pattern}`).limit(8),
       window.slcDB.from('slc_summaries').select('lecture_id,course_id,summary_html').ilike('summary_html', pattern).limit(6)
     ]);
     const items = [];

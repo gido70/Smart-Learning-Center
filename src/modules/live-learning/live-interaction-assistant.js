@@ -170,7 +170,7 @@
       state.interim = compactText(interimText, 280);
       if (finalText.trim()) {
         const completed = compactText(finalText, 700);
-        state.transcript = compactText(`${state.transcript} ${completed}`, 18000);
+        state.transcript = compactText(`${state.transcript} ${completed}`, 180000);
         buildSuggestions(completed, "speech");
         save();
       }
@@ -269,7 +269,7 @@
       if (!slide.image || slide.image === state.lastSlideSource) return;
       state.lastSlideSource = slide.image;
       clearTimeout(state.autoOcrTimer);
-      state.autoOcrTimer = setTimeout(() => analyzeCurrentSlide(false), 3500);
+      state.autoOcrTimer = setTimeout(() => analyzeCurrentSlide(false), 1500);
     });
     observer.observe(thumb, { childList: true, subtree: true, attributes: true, attributeFilter: ["src"] });
   }

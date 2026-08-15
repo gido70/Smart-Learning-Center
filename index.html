@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/app.css?v=3.6.2" />
+  <link rel="stylesheet" href="assets/css/app.css?v=3.6.4" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -344,6 +344,7 @@
             <article class="panel finish-live-panel">
               <button class="btn primary wide" id="finishLiveBtn">■ إنهاء الجلسة ومراجعتها</button>
               <div class="live-export-actions">
+                <button id="exportLiveAudioBtn">تنزيل الصوت عند الحاجة</button>
                 <button id="exportLiveJsonBtn">تنزيل JSON</button>
                 <button id="exportLiveTxtBtn">تنزيل TXT</button>
               </div>
@@ -401,7 +402,7 @@
         <div class="workspace-grid">
           <section class="panel player-panel">
             <div class="player-shell" id="playerShell">
-              <iframe id="lessonFrame" title="مشغل المحاضرة" src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+              <iframe id="lessonFrame" title="مشغل المحاضرة" src="about:blank" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
               <div class="embed-fallback" id="embedFallback">
                 <span>🔗</span><h3>هذا المصدر لا يسمح بالعرض داخل المنصة</h3><p>يمكنك فتحه في موقعه الأصلي، وستبقى ملاحظاتك وتقدمك محفوظين هنا.</p><a class="btn primary" href="https://www.youtube.com/" target="_blank" rel="noopener">فتح المصدر الأصلي</a>
               </div>
@@ -599,19 +600,19 @@
   </div>
 
   <div class="toast" id="toast">تمت العملية بنجاح</div>
-  <script src="assets/js/app.js?v=3.6.2"></script>
-  <script src="assets/js/supabase-integration.js?v=3.6.2"></script>
-  <script src="src/modules/live-learning/session-controls.js?v=3.6.2"></script>
+  <script src="assets/js/app.js?v=3.6.4"></script>
+  <script src="assets/js/supabase-integration.js?v=3.6.4"></script>
+  <script src="src/modules/live-learning/session-controls.js?v=3.6.4"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="assets/js/live-studio.js?v=3.6.2"></script>
-  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.6.2"></script>
-  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.6.2"></script>
-  <script src="assets/js/workspace.js?v=3.6.2"></script>
-  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.6.2"></script>
-  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.6.2"></script>
-  <script src="src/modules/course-series/course-series.js?v=3.6.2"></script>
-  <script src="src/modules/lecture-workspace/smart-lecture-guide.js?v=3.6.2"></script>
-  <script src="src/modules/digital-product-camp/digital-product-camp.js?v=3.6.3"></script>
+  <script src="assets/js/live-studio.js?v=3.6.4"></script>
+  <script src="src/modules/live-learning/live-interaction-assistant.js?v=3.6.4"></script>
+  <script src="src/modules/lecture-workspace/unified-lecture-workspace.js?v=3.6.4"></script>
+  <script src="assets/js/workspace.js?v=3.6.4"></script>
+  <script src="src/modules/lecture-portal/lecture-portal.js?v=3.6.4"></script>
+  <script src="src/modules/lecture-summarizer/lecture-summarizer.js?v=3.6.4"></script>
+  <script src="src/modules/course-series/course-series.js?v=3.6.4"></script>
+  <script src="src/modules/lecture-workspace/smart-lecture-guide.js?v=3.6.4"></script>
+  <script src="src/modules/digital-product-camp/digital-product-camp.js?v=3.6.4"></script>
   <!-- Test Deploy 2026-08-06 20:49 +03 -->
 </body>
 </html>
