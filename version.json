@@ -1,9 +1,9 @@
 {
-  "version": "3.6.2",
-  "build": "2026-08-15-system-audio-transcription",
+  "version": "3.6.3",
+  "build": "2026-08-15-camp-knowledge-assistant",
   "supabase_integration": true,
   "live_studio": true,
   "lecture_portal": true,
   "ai_api_in_frontend": false,
-  "notes": "Prevented live transcription from silently opening the room microphone and routed it to the shared lecture-audio track when supported."
+  "notes": "Added a local evidence-based camp assistant that turns the latest saved lecture into reviewable product ideas, a decision draft, one measurable action, a lecturer question, and an opportunity hypothesis."
 }
