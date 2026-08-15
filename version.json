@@ -1,9 +1,9 @@
 {
-  "version": "3.6.3",
-  "build": "2026-08-15-camp-knowledge-assistant",
+  "version": "3.6.4",
+  "build": "2026-08-15-camp-lecture-archive",
   "supabase_integration": true,
   "live_studio": true,
   "lecture_portal": true,
   "ai_api_in_frontend": false,
-  "notes": "Added a local evidence-based camp assistant that turns the latest saved lecture into reviewable product ideas, a decision draft, one measurable action, a lecturer question, and an opportunity hypothesis."
+  "notes": "Connected the camp assistant to all saved camp lectures, preserved searchable live transcripts, clarified no-video knowledge lectures, made audio download optional, and accelerated slide analysis."
 }
