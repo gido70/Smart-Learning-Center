@@ -6,6 +6,7 @@
   const MAX_RECOMMENDED = 8;
   const state = {
     recognition: null,
+    audioTrack: null,
     listening: false,
     transcript: "",
     interim: "",
@@ -154,7 +155,7 @@
     recognition.lang = $("aiSpeechLanguage")?.value || "ar-SA";
     recognition.onstart = () => {
       state.listening = true;
-      setStatus("● يستمع الآن", "red");
+      setStatus("● يفرّغ صوت المحاضرة فقط", "red");
       const button = $("aiToggleListeningBtn");
       if (button) button.textContent = "■ إيقاف الاستماع";
     };
@@ -176,12 +177,12 @@
       render();
     };
     recognition.onerror = (event) => {
-      if (event.error === "not-allowed") setStatus("إذن الميكروفون مرفوض", "amber");
+      if (event.error === "not-allowed") setStatus("تعذر استخدام مسار صوت المحاضرة", "amber");
       else if (event.error !== "no-speech") setStatus(`تعذر التفريغ: ${event.error}`, "amber");
     };
     recognition.onend = () => {
       if (state.listening) {
-        try { recognition.start(); } catch (_error) { state.listening = false; }
+        try { recognition.start(state.audioTrack); } catch (_error) { state.listening = false; }
       }
       if (!state.listening) {
         setStatus("الاستماع متوقف", "blue");
@@ -202,11 +203,19 @@
       state.recognition?.stop();
       return;
     }
+    const audioTrack = window.SLCLiveAudio?.getSystemAudioTrack?.();
+    if (!audioTrack || audioTrack.readyState !== "live") {
+      setStatus("فعّل «صوت المحاضرة» أولًا واختر مشاركة الصوت", "amber");
+      return;
+    }
+    state.audioTrack = audioTrack;
     state.recognition = configureRecognition();
     try {
-      state.recognition.start();
+      state.recognition.start(audioTrack);
     } catch (_error) {
-      setStatus("تعذر بدء الاستماع. أعد المحاولة.", "amber");
+      state.recognition = null;
+      state.audioTrack = null;
+      setStatus("هذا المتصفح لا يدعم تفريغ صوت النظام مباشرة؛ لن يُفتح الميكروفون", "amber");
     }
   }
 
@@ -384,6 +393,12 @@
         state.recognition?.stop();
         setTimeout(toggleListening, 250);
       }
+    });
+    window.addEventListener("slc:system-audio-changed", (event) => {
+      if (event.detail?.track) return;
+      if (state.listening) stopListening();
+      state.audioTrack = null;
+      setStatus("صوت المحاضرة متوقف — الميكروفون الخارجي لن يعمل تلقائيًا", "blue");
     });
     startAutoSlideWatch();
     render();
