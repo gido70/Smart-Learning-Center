@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.6.4 — Camp Lecture Archive
+- Connected the Digital Product Camp assistant to the saved camp lectures in Supabase, with an explicit lecture selector and a local-session fallback.
+- Corrected the camp schedule to 15 August–30 September, Saturdays and Sundays, two hours per session.
+- Preserved the complete live transcript in the lecture record and TXT export, and included transcript text in global search.
+- Replaced the demo/fake video fallback with a clear knowledge-only state for live lectures that have no recording URL.
+- Made audio download an explicit optional action while the latest recording remains available on the same device.
+- Accelerated automatic slide detection and OCR follow-up while retaining duplicate protection.
+- Added no SQL and no Supabase schema changes.
+
 ## 3.6.3 — Camp Knowledge Assistant
 - Added one-click analysis of the latest locally saved lecture inside the Digital Product Camp.
 - Extracted the strongest lecture ideas against the product charter and prepared a reviewable decision and measurable next action.
