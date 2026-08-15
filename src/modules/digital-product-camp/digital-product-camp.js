@@ -3,6 +3,9 @@
   if (!root) return;
 
   const STORAGE_KEY = 'slc_digital_product_camp_v1';
+  const LAST_LECTURE_KEY = 'slc_live_studio_last_session_v352';
+  const LECTURE_DB = 'slc_live_studio';
+  const LECTURE_STORE = 'sessions';
   const phases = [
     { id: 1, days: '1–10', title: 'تأسيس المنتج', text: 'اختيار الفكرة والجمهور والمشكلة والوعد.' },
     { id: 2, days: '11–25', title: 'صناعة المحتوى', text: 'تحويل الخبرة إلى تجربة تعليمية تفاعلية قابلة للاستخدام.' },
@@ -38,6 +41,82 @@
   }
   function progress() { return Math.round((state.completedTasks.length / tasks.length) * 100); }
 
+  function readLastLecture() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('التخزين المحلي غير متاح'));
+      const request = indexedDB.open(LECTURE_DB, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(LECTURE_STORE)) db.createObjectStore(LECTURE_STORE);
+      };
+      request.onerror = () => reject(request.error || new Error('تعذر فتح سجل المحاضرات'));
+      request.onsuccess = () => {
+        const db = request.result;
+        const getRequest = db.transaction(LECTURE_STORE, 'readonly').objectStore(LECTURE_STORE).get(LAST_LECTURE_KEY);
+        getRequest.onsuccess = () => { resolve(getRequest.result || null); db.close(); };
+        getRequest.onerror = () => { reject(getRequest.error); db.close(); };
+      };
+    });
+  }
+
+  function sentences(text) {
+    return String(text || '').replace(/\s+/g, ' ').split(/(?<=[.!؟؛])\s+|\n+/)
+      .map(value => value.trim()).filter(value => value.length >= 28 && value.length <= 420);
+  }
+  function keywords(text) {
+    const ignored = new Set(['الذي','التي','هذا','هذه','ذلك','تلك','هناك','يمكن','يكون','كانت','ولكن','عندما','خلال','أيضا','أيضاً','حول','على','إلى','من','في','عن','مع','هو','هي','ثم','بعد','قبل','the','and','for','with','this','that']);
+    return String(text || '').toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, ' ').split(/\s+/)
+      .filter(word => word.length > 3 && !ignored.has(word));
+  }
+  function rankIdeas(text, context) {
+    const contextWords = new Set(keywords(context));
+    const seen = new Set();
+    return sentences(text).map(sentence => {
+      const words = keywords(sentence);
+      const overlap = words.filter(word => contextWords.has(word)).length;
+      const action = /مشكلة|حل|منتج|جمهور|مستفيد|تطبيق|تجربة|سعر|تسويق|محتوى|منهج|فرصة|قرار|خطوة|قياس|اختبار|problem|product|audience|apply|test/i.test(sentence) ? 3 : 0;
+      const evidence = /\d|%|٪|مثال|نتيجة|دليل|مقارنة|example|result/i.test(sentence) ? 2 : 0;
+      return { sentence, score: overlap * 2 + action + evidence + Math.min(words.length / 12, 2) };
+    }).sort((a, b) => b.score - a.score).filter(item => {
+      const signature = keywords(item.sentence).slice(0, 6).join(' ');
+      if (!signature || seen.has(signature)) return false;
+      seen.add(signature); return true;
+    }).slice(0, 5).map(item => item.sentence);
+  }
+  function lectureText(lecture) {
+    const assistant = lecture?.interaction_assistant || {};
+    const slideText = (lecture?.slides || []).flatMap(slide => [slide.title, slide.notes]).filter(Boolean);
+    const suggestions = (assistant.saved_suggestions || assistant.suggestions || []).map(item => item.excerpt || item.text);
+    return [lecture?.transcript, lecture?.quick_summary, ...(lecture?.highlights || []), ...(lecture?.questions || []).map(item => item.question || item), ...slideText, ...suggestions].filter(Boolean).join('. ');
+  }
+  async function analyzeLastLecture() {
+    const button = root.querySelector('#campAnalyzeLecture');
+    const status = root.querySelector('#campAssistantStatus');
+    button.disabled = true; status.textContent = 'يقرأ آخر محاضرة محفوظة…';
+    try {
+      const lecture = await readLastLecture();
+      const text = lectureText(lecture);
+      if (!lecture || text.length < 80) throw new Error('لا توجد محاضرة محفوظة بنص كافٍ على هذا الجهاز');
+      const context = `${state.title} ${state.audience} ${state.problem} ${state.promise}`;
+      const ideas = rankIdeas(text, context);
+      if (!ideas.length) throw new Error('لم يُعثر على أدلة نصية كافية للتحليل');
+      const primary = ideas[0];
+      const second = ideas[1] || primary;
+      root.querySelector('#campLectureTitle').value = lecture.title || 'آخر محاضرة في المخيم';
+      root.querySelector('#campLearned').value = ideas.map((idea, index) => `${index + 1}. ${idea}`).join('\n');
+      root.querySelector('#campDecision').value = `قرار مقترح للمراجعة: اختبر صلة «${primary.slice(0, 150)}» بمشكلة المستفيد المحددة في ميثاق المنتج قبل إضافتها إلى المنتج.`;
+      root.querySelector('#campNextAction').value = `خلال 24 ساعة: حوّل فكرة «${second.slice(0, 120)}» إلى نموذج صغير، واعرضه على مستفيد واحد، وسجّل ما فهمه وما لم يفهمه.`;
+      const savedQuestions = (lecture.questions || []).map(item => item.question || item).filter(Boolean);
+      root.querySelector('#campAssistantIdeas').innerHTML = ideas.map(idea => `<li>${esc(idea)}</li>`).join('');
+      root.querySelector('#campAssistantQuestion').textContent = savedQuestions[0] || `سؤال للمحاضر: ما الدليل أو المثال العملي الذي يثبت قابلية تطبيق «${primary.slice(0, 110)}» على منتج يخدم ${state.audience.slice(0, 90)}؟`;
+      root.querySelector('#campAssistantOpportunity').textContent = `فرصة محتملة: تحويل الفكرة الأقوى إلى أداة أو قالب قصير يحل جزءًا واحدًا من المشكلة: ${state.problem.slice(0, 170)}`;
+      root.querySelector('#campAssistantResult').hidden = false;
+      status.textContent = 'تم إعداد مسودة من أدلة المحاضرة؛ راجعها وعدّلها قبل الحفظ.';
+    } catch (error) {
+      status.textContent = error.message || 'تعذر تحليل آخر محاضرة.';
+    } finally { button.disabled = false; }
+  }
+
   function render() {
     root.innerHTML = `
       <div class="camp-page-head">
@@ -53,7 +132,8 @@
         <article class="card camp-charter" id="campCharter"><h2>ميثاق المنتج</h2><label>اسم المنتج<input id="campTitle" value="${esc(state.title)}"></label><label>لمن؟<textarea id="campAudience">${esc(state.audience)}</textarea></label><label>المشكلة التي يحلها<textarea id="campProblem">${esc(state.problem)}</textarea></label><label>الوعد العملي<textarea id="campPromise">${esc(state.promise)}</textarea></label><button class="btn primary" id="campSaveCharter">حفظ الميثاق</button></article>
         <article class="card camp-checklist"><h2>لوحة التنفيذ</h2><p>أنجز خطوة واحدة واضحة في كل مرة.</p>${tasks.map(([name, phase], i) => `<label class="camp-task"><input type="checkbox" data-task="${i}" ${state.completedTasks.includes(i) ? 'checked' : ''}><span>${esc(name)}<small>المرحلة ${phase}</small></span></label>`).join('')}</article>
       </section>
-      <section class="card camp-lecture-output" id="campLectureOutput"><h2>من المحاضرة إلى المنتج</h2><p>هذه هي الحلقة الأهم: لا تُحفظ المحاضرة كمعلومة فقط، بل تتحول إلى أثر تنفيذي.</p><div class="camp-output-form"><input id="campLectureTitle" placeholder="عنوان محاضرة اليوم"><textarea id="campLearned" placeholder="ما الفكرة التي تعلمتها؟"></textarea><textarea id="campDecision" placeholder="ما القرار الذي اتخذته للمنتج؟"></textarea><textarea id="campNextAction" placeholder="ما المهمة التالية القابلة للتنفيذ؟"></textarea><button class="btn primary" id="campAddOutput">حفظ مخرج المحاضرة</button></div><div class="camp-output-list">${renderOutputs()}</div></section>
+      <section class="card camp-knowledge-assistant"><div class="camp-assistant-head"><div><span class="eyebrow">مساعد معرفي — أنت صاحب القرار</span><h2>حوّل آخر محاضرة إلى خطوة للمنتج</h2><p>يقرأ النص والشرائح والملاحظات المحفوظة محليًا، ثم يجهّز مسودة موثقة لتراجعها أنت.</p></div><button class="btn primary" id="campAnalyzeLecture">تحليل آخر محاضرة</button></div><p id="campAssistantStatus" class="camp-assistant-status">لن يرسل بياناتك إلى خدمة خارجية، ولن يعتمد قرارًا بدلًا عنك.</p><div id="campAssistantResult" class="camp-assistant-result" hidden><section><h3>أهم الأفكار المرتبطة بمنتجك</h3><ol id="campAssistantIdeas"></ol></section><section><h3>سؤال مفيد للمحاضر</h3><p id="campAssistantQuestion"></p></section><section><h3>فرصة منتج أو خدمة</h3><p id="campAssistantOpportunity"></p></section></div></section>
+      <section class="card camp-lecture-output" id="campLectureOutput"><h2>من المحاضرة إلى المنتج</h2><p>هذه هي الحلقة الأهم: لا تُحفظ المحاضرة كمعلومة فقط، بل تتحول إلى أثر تنفيذي. زر التحليل أعلاه يملأ لك مسودة أولية.</p><div class="camp-output-form"><input id="campLectureTitle" placeholder="عنوان محاضرة اليوم"><textarea id="campLearned" placeholder="ما الفكرة التي تعلمتها؟"></textarea><textarea id="campDecision" placeholder="ما القرار الذي اتخذته للمنتج؟"></textarea><textarea id="campNextAction" placeholder="ما المهمة التالية القابلة للتنفيذ؟"></textarea><button class="btn primary" id="campAddOutput">اعتماد وحفظ مخرج المحاضرة</button></div><div class="camp-output-list">${renderOutputs()}</div></section>
       <div class="camp-guide-modal" id="campGuideModal" hidden tabindex="-1">
         <button class="camp-guide-backdrop" data-close-camp-guide aria-label="إغلاق الدليل"></button>
         <article class="camp-guide-card" role="dialog" aria-modal="true" aria-labelledby="campGuideTitle">
@@ -94,6 +174,7 @@
     });
     root.querySelector('#campGuideOpenLecture').onclick = () => { closeGuide(); location.hash = 'live'; };
     root.querySelector('#campOpenLecture').onclick = () => { location.hash = 'live'; };
+    root.querySelector('#campAnalyzeLecture').onclick = analyzeLastLecture;
     root.querySelector('#campSaveCharter').onclick = () => {
       state.title = root.querySelector('#campTitle').value.trim();
       state.audience = root.querySelector('#campAudience').value.trim();
