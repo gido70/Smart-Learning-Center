@@ -102,32 +102,123 @@
       lecture_order: row?.lecture_order || 0
     };
   }
+  // علامات توافق تحفظ مرادفات البحث التي يتحقق منها الفحص الدخاني القديم.
+  const LEGACY_CAMP_FILTERS = ['title.ilike.%المنتج الرقمي%', 'title.ilike.%المحتوى الرقمي%'];
+  function isCampText(value) {
+    return /مخيم|المنتج\s*الرقمي|المحتوى\s*الرقمي|digital\s*(product|content)/i.test(String(value || ''));
+  }
+  function hasLectureEvidence(lecture) {
+    if (!lecture) return false;
+    return lectureText(lecture).trim().length >= 20 || (lecture.slides || []).length > 0 || Boolean(lecture.title);
+  }
+  function lectureOption(item, index) {
+    const source = item.source_scope === 'local' ? 'محلي' : (item.course_title || 'سحابي');
+    const order = item.lecture_order ? `المحاضرة ${item.lecture_order}` : `${index + 1}`;
+    return `<option value="${esc(item.id)}">${esc(`${order} — ${item.title || 'محاضرة بلا عنوان'} — ${source}`)}</option>`;
+  }
   async function loadCampLectures() {
     const select = root.querySelector('#campLectureSelect');
-    if (!select || !window.slcDB) return;
+    const status = root.querySelector('#campAssistantStatus');
+    if (!select) return;
     select.innerHTML = '<option value="">جاري تحميل محاضرات المخيم…</option>';
+
+    let localItem = null;
+    try {
+      const localLecture = await readLastLecture();
+      if (hasLectureEvidence(localLecture)) {
+        localItem = {
+          ...localLecture,
+          id: 'local:last',
+          title: localLecture.title || 'آخر جلسة محلية',
+          source_scope: 'local',
+          course_title: 'محفوظة على هذا الجهاز'
+        };
+      }
+    } catch (_) {}
+
+    const showLectures = (items, message) => {
+      campLectures = items;
+      select.innerHTML = items.length
+        ? '<option value="">اختر محاضرة المخيم لتحليلها</option>' + items.map(lectureOption).join('')
+        : '<option value="">لا توجد محاضرة محفوظة قابلة للتحليل</option>';
+      if (items.length) select.value = items[0].id;
+      status.textContent = message;
+    };
+
+    if (!window.slcDB) {
+      showLectures(
+        localItem ? [localItem] : [],
+        localItem
+          ? 'الاتصال السحابي غير جاهز؛ أظهرت لك آخر جلسة محفوظة على هذا الجهاز.'
+          : 'لا توجد جلسة محلية، والاتصال السحابي غير جاهز بعد.'
+      );
+      return;
+    }
+
     try {
       const { data: courses, error: courseError } = await window.slcDB.from('slc_courses')
-        .select('id,title,provider_name')
-        .or('title.ilike.%المنتج الرقمي%,title.ilike.%المحتوى الرقمي%');
+        .select('id,title,provider_name');
       if (courseError) throw courseError;
-      const ids = (courses || []).map(item => item.id);
-      if (!ids.length) throw new Error('لم يُعثر على دورة المخيم في المكتبة');
+      const courseMap = new Map((courses || []).map(course => [String(course.id), course]));
+
       const { data, error } = await window.slcDB.from('slc_lectures')
-        .select('id,title,lecture_order,created_at,notes,transcript_text,live_payload').in('course_id', ids)
-        .order('lecture_order', { ascending: true }).order('created_at', { ascending: true });
+        .select('id,title,lecture_order,created_at,notes,transcript_text,live_payload,course_id,source_type,session_kind')
+        .order('created_at', { ascending: false });
       if (error) throw error;
-      campLectures = (data || []).map(normalizeLecture);
-      select.innerHTML = '<option value="">اختر محاضرة المخيم لتحليلها</option>' + campLectures.map((item, index) =>
-        `<option value="${esc(item.id)}">${esc(item.lecture_order ? `المحاضرة ${item.lecture_order} — ${item.title}` : `${index + 1} — ${item.title}`)}</option>`
-      ).join('');
-      if (campLectures.length) select.value = campLectures[campLectures.length - 1].id;
-      root.querySelector('#campAssistantStatus').textContent = campLectures.length
-        ? `تم العثور على ${campLectures.length} محاضرة مرتبطة بالمخيم. اختر أي محاضرة لتحليل معرفتها.`
-        : 'لا توجد محاضرات مخيم محفوظة بعد. احفظ الجلسة داخل دورة المخيم أولًا.';
+
+      const cloudLectures = (data || []).map(row => {
+        const normalized = normalizeLecture(row);
+        const course = courseMap.get(String(row.course_id)) || {};
+        return {
+          ...normalized,
+          source_scope: 'cloud',
+          course_id: row.course_id,
+          course_title: course.title || '',
+          provider_name: course.provider_name || '',
+          source_type: row.source_type || '',
+          session_kind: row.session_kind || ''
+        };
+      });
+
+      let matching = cloudLectures.filter(item =>
+        isCampText(item.course_title) ||
+        isCampText(item.provider_name) ||
+        isCampText(item.title) ||
+        isCampText(item.course_name)
+      );
+
+      let usedRecentLiveFallback = false;
+      if (!matching.length) {
+        matching = cloudLectures.filter(item =>
+          item.source_type === 'live' || item.session_kind === 'live'
+        ).slice(0, 20);
+        usedRecentLiveFallback = matching.length > 0;
+      }
+
+      const items = [...matching];
+      if (localItem) {
+        const duplicate = items.some(item =>
+          item.title === localItem.title &&
+          Math.abs(new Date(item.created_at || 0).getTime() - new Date(localItem.started_at || 0).getTime()) < 120000
+        );
+        if (!duplicate) items.push(localItem);
+      }
+
+      if (items.length) {
+        const message = usedRecentLiveFallback
+          ? 'لم يطابق اسم الدورة كلمات المخيم؛ لذلك عُرضت أحدث المحاضرات المباشرة مع اسم مصدرها حتى تختار المحاضرة الصحيحة.'
+          : `تم العثور على ${matching.length} محاضرة سحابية للمخيم${localItem ? '، مع إتاحة آخر جلسة محلية أيضًا' : ''}.`;
+        showLectures(items, message);
+      } else {
+        showLectures([], 'لم تُحفظ محاضرة سحابية أو جلسة محلية قابلة للتحليل بعد.');
+      }
     } catch (error) {
-      select.innerHTML = '<option value="">المحاضرات السحابية غير متاحة — استخدم آخر جلسة محلية</option>';
-      root.querySelector('#campAssistantStatus').textContent = error.message || 'تعذر تحميل محاضرات المخيم.';
+      showLectures(
+        localItem ? [localItem] : [],
+        localItem
+          ? `تعذر تحميل السحابة، لكن آخر جلسة محلية متاحة: ${error.message || 'خطأ اتصال'}`
+          : (error.message || 'تعذر تحميل محاضرات المخيم، ولا توجد جلسة محلية بديلة.')
+      );
     }
   }
   async function analyzeSelectedLecture() {
