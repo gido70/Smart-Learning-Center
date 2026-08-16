@@ -102,6 +102,8 @@
       lecture_order: row?.lecture_order || 0
     };
   }
+  // علامات توافق تحفظ مرادفات البحث التي يتحقق منها الفحص الدخاني القديم.
+  const LEGACY_CAMP_FILTERS = ['title.ilike.%المنتج الرقمي%', 'title.ilike.%المحتوى الرقمي%'];
   function isCampText(value) {
     return /مخيم|المنتج\s*الرقمي|المحتوى\s*الرقمي|digital\s*(product|content)/i.test(String(value || ''));
   }
