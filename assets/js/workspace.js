@@ -201,15 +201,37 @@
     if (!box || !window.slcDB) return;
     const term = query.trim();
     if (term.length < 2) return box.classList.add('hidden');
-    const pattern = `%${term}%`;
-    const [coursesResult, lecturesResult, summariesResult] = await Promise.all([
+    const safeTerm = term.replace(/[%_,()]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (safeTerm.length < 2) return box.classList.add('hidden');
+    const pattern = `%${safeTerm}%`;
+    const [coursesResult, summariesResult] = await Promise.all([
       window.slcDB.from('slc_courses').select('id,title,provider_name').or(`title.ilike.${pattern},provider_name.ilike.${pattern}`).limit(6),
-      window.slcDB.from('slc_lectures').select('id,course_id,title,module_name,notes,transcript_text,slc_courses(title,provider_name)').or(`title.ilike.${pattern},module_name.ilike.${pattern},notes.ilike.${pattern},transcript_text.ilike.${pattern}`).limit(8),
       window.slcDB.from('slc_summaries').select('lecture_id,course_id,summary_html').ilike('summary_html', pattern).limit(6)
     ]);
+    const matchingCourseIds = (coursesResult.data || []).map((course) => course.id);
+    const lectureSelect = 'id,course_id,title,module_name,notes,transcript_text,created_at,slc_courses(title,provider_name)';
+    const lectureQueries = [
+      window.slcDB.from('slc_lectures').select(lectureSelect)
+        .or(`title.ilike.${pattern},module_name.ilike.${pattern},notes.ilike.${pattern},transcript_text.ilike.${pattern}`)
+        .order('created_at', { ascending: false }).limit(16)
+    ];
+    if (matchingCourseIds.length) {
+      lectureQueries.push(window.slcDB.from('slc_lectures').select(lectureSelect)
+        .in('course_id', matchingCourseIds).order('created_at', { ascending: false }).limit(16));
+    }
+    const lectureResults = await Promise.all(lectureQueries);
+    const matchingLectures = lectureResults.flatMap((result) => result.data || []);
     const items = [];
     (coursesResult.data || []).forEach((course) => items.push({ type: 'course', id: course.id, title: course.title, meta: course.provider_name || 'كورس', icon: '🎓' }));
-    (lecturesResult.data || []).forEach((lecture) => items.push({ type: 'lecture', id: lecture.id, courseId: lecture.course_id, title: lecture.title, meta: `${lecture.slc_courses?.provider_name || 'محاضرة'} · ${lecture.module_name || lecture.slc_courses?.title || ''}`, icon: '▶' }));
+    matchingLectures.forEach((lecture) => {
+      const evidence = [lecture.notes, lecture.transcript_text].find((value) => String(value || '').toLowerCase().includes(safeTerm.toLowerCase()));
+      const context = evidence ? String(evidence).replace(/\s+/g, ' ').slice(0, 120) : '';
+      items.push({
+        type: 'lecture', id: lecture.id, courseId: lecture.course_id, title: lecture.title,
+        meta: context || `${lecture.slc_courses?.title || 'محاضرة'} · ${lecture.slc_courses?.provider_name || lecture.module_name || ''}`,
+        icon: '▶'
+      });
+    });
     (summariesResult.data || []).forEach((summary) => items.push({ type: summary.lecture_id ? 'lecture' : 'course', id: summary.lecture_id || summary.course_id, courseId: summary.course_id, title: 'نتيجة من داخل خلاصة محفوظة', meta: summary.summary_html.slice(0, 110), icon: '📝' }));
     const unique = [...new Map(items.map((item) => [`${item.type}-${item.id}`, item])).values()].slice(0, 12);
     box.innerHTML = unique.length ? unique.map((item) => `<button class="search-result-item" data-result-type="${item.type}" data-result-id="${item.id}" data-course-id="${item.courseId || item.id}"><h4>${item.icon} ${escapeHtml(item.title)}</h4><p>${escapeHtml(item.meta)}</p></button>`).join('') : '<div class="search-empty">لا نتائج مطابقة داخل محاضراتك</div>';

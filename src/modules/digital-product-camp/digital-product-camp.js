@@ -108,7 +108,8 @@
     select.innerHTML = '<option value="">جاري تحميل محاضرات المخيم…</option>';
     try {
       const { data: courses, error: courseError } = await window.slcDB.from('slc_courses')
-        .select('id,title,provider_name').ilike('title', '%المنتج الرقمي%');
+        .select('id,title,provider_name')
+        .or('title.ilike.%المنتج الرقمي%,title.ilike.%المحتوى الرقمي%');
       if (courseError) throw courseError;
       const ids = (courses || []).map(item => item.id);
       if (!ids.length) throw new Error('لم يُعثر على دورة المخيم في المكتبة');
