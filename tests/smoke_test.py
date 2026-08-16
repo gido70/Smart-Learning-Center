@@ -28,6 +28,11 @@ for token in ['campGuideBtn','campGuideModal','ابدأ في 3 خطوات','مث
     if token not in camp: errors.append(f'دليل مختبر المنتج الرقمي مفقود: {token}')
 for token in ['campAnalyzeLecture','campLectureSelect','loadCampLectures','readLastLecture','rankIdeas','campAssistantOpportunity','اعتماد وحفظ مخرج المحاضرة']:
     if token not in camp: errors.append(f'مساعد تحويل المعرفة إلى منتج مفقود: {token}')
+for token in ['title.ilike.%المنتج الرقمي%','title.ilike.%المحتوى الرقمي%']:
+    if token not in camp: errors.append(f'مرادف اسم مخيم المنتج/المحتوى الرقمي مفقود: {token}')
+workspace=(root/'assets/js/workspace.js').read_text(encoding='utf-8')
+for token in ['matchingCourseIds','matchingLectures','order(\'created_at\', { ascending: false })']:
+    if token not in workspace: errors.append(f'بحث المحاضرات المرتبطة بالدورة مفقود: {token}')
 for token in ['pauseLiveBtn','resumeLiveBtn','reselectScreenBtn','liveAudioStatus','session-controls.js','liveAiCompanion','aiToggleListeningBtn','aiAnalyzeSlideBtn','aiSuggestionList','aiSlideSuggestionList','aiSpeechSuggestionList','exitFullscreenPreviewBtn','finish-live-scroll','live-interaction-assistant.js','autoCaptureBtn','restoreLiveDraftBtn','lectureHelperInput']:
     if token not in index: errors.append(f'تحكم الجلسة المباشرة مفقود: {token}')
 live_studio=(root/'assets/js/live-studio.js').read_text(encoding='utf-8')

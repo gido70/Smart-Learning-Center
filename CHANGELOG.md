@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.6.5 — Camp Lecture Search
+- Made the global search find lectures through their linked course or camp name, in addition to the lecture title, notes, transcript, and summary.
+- Ordered matching lectures newest-first and increased the safe result pool so a newly saved camp lecture is not hidden by older matches.
+- Recognized both Arabic names «مخيم المنتج الرقمي» and «مخيم المحتوى الرقمي» when loading camp lectures.
+- Added no SQL and made no Supabase schema changes.
+
 ## 3.6.4 — Camp Lecture Archive
 - Connected the Digital Product Camp assistant to the saved camp lectures in Supabase, with an explicit lecture selector and a local-session fallback.
 - Corrected the camp schedule to 15 August–30 September, Saturdays and Sundays, two hours per session.
